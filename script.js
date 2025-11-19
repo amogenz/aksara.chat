@@ -1,4 +1,3 @@
-
 let client;
 let myName = "";
 let myRoom = "";
@@ -11,24 +10,15 @@ let typingTimeout;
 
 const notifAudio = document.getElementById('notifSound');
 
-// --- INIT ---
 window.onload = function() {
     if(localStorage.getItem('aksara_name')) document.getElementById('username').value = localStorage.getItem('aksara_name');
     if(localStorage.getItem('aksara_room')) document.getElementById('room').value = localStorage.getItem('aksara_room');
-    
-    if(localStorage.getItem('aksara_sound')) {
-        isSoundOn = (localStorage.getItem('aksara_sound') === 'true');
-        document.getElementById('sound-toggle').checked = isSoundOn;
-    }
-    if(localStorage.getItem('aksara_enter')) {
-        sendOnEnter = (localStorage.getItem('aksara_enter') === 'true');
-        document.getElementById('enter-toggle').checked = sendOnEnter;
-    }
+    if(localStorage.getItem('aksara_sound')) document.getElementById('sound-toggle').checked = (localStorage.getItem('aksara_sound') === 'true');
+    if(localStorage.getItem('aksara_enter')) document.getElementById('enter-toggle').checked = (localStorage.getItem('aksara_enter') === 'true');
     const savedBg = localStorage.getItem('aksara_bg_image');
     if(savedBg) document.body.style.backgroundImage = `url(${savedBg})`;
 };
 
-// --- NOTIFIKASI ---
 function enableNotif() {
     Notification.requestPermission().then(permission => {
         closeNotifPopup();
@@ -39,41 +29,27 @@ function enableNotif() {
         }
     });
 }
-
 function checkNotifPermission() {
     if (!("Notification" in window)) return;
-    if (Notification.permission === 'default') {
-        document.getElementById('notif-popup').style.display = 'flex';
-    }
+    if (Notification.permission === 'default') document.getElementById('notif-popup').style.display = 'flex';
 }
 function closeNotifPopup() { document.getElementById('notif-popup').style.display = 'none'; }
-
 function sendSystemNotification(user, text) {
     if (document.visibilityState === "hidden" && Notification.permission === "granted") {
-        const notif = new Notification(`Aksara: ${user}`, {
-            body: text, icon: "https://i.imgur.com/Ct0pzwl.png", vibrate: [200, 100, 200], tag: 'aksara-msg'
-        });
+        const notif = new Notification(`Aksara: ${user}`, { body: text, icon: "https://i.imgur.com/Ct0pzwl.png", vibrate: [200, 100, 200], tag: 'aksara-msg' });
         notif.onclick = function() { window.focus(); this.close(); };
     }
 }
 
-// --- SIDEBAR & VIDEO ---
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
     const video = document.getElementById('sidebar-video');
     const isActive = sidebar.style.left === '0px';
-
-    if (isActive) {
-        sidebar.style.left = '-280px'; overlay.style.display = 'none';
-        if(video) { video.pause(); video.currentTime = 0; }
-    } else {
-        sidebar.style.left = '0px'; overlay.style.display = 'block';
-        if(video) { video.play().catch(e => console.log("Autoplay blocked", e)); }
-    }
+    if (isActive) { sidebar.style.left = '-280px'; overlay.style.display = 'none'; if(video) { video.pause(); video.currentTime = 0; } }
+    else { sidebar.style.left = '0px'; overlay.style.display = 'block'; if(video) { video.play().catch(e => console.log("Autoplay blocked", e)); } }
 }
 
-// --- CORE APP LOGIC ---
 function startChat() {
     const user = document.getElementById('username').value.trim();
     const room = document.getElementById('room').value.trim().toLowerCase();
@@ -82,14 +58,13 @@ function startChat() {
     localStorage.setItem('aksara_name', user);
     localStorage.setItem('aksara_room', room);
     myName = user;
-    myRoom = "aksara-v13/" + room;
+    myRoom = "aksara-v14/" + room;
 
     document.getElementById('side-user').innerText = myName;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('chat-screen').style.display = 'flex';
     document.getElementById('room-display').innerText = "#" + room;
     
-    // SET DEFAULT TEXT
     document.getElementById('typing-indicator').innerText = "from Amogenz";
 
     checkNotifPermission();
@@ -101,10 +76,7 @@ function startChat() {
     client.on('connect', () => {
         client.subscribe(myRoom);
         publishMessage("bergabung.", 'system');
-        setInterval(() => {
-            client.publish(myRoom, JSON.stringify({ type: 'ping', user: myName }));
-            cleanOnlineList();
-        }, 10000);
+        setInterval(() => { client.publish(myRoom, JSON.stringify({ type: 'ping', user: myName })); cleanOnlineList(); }, 10000);
     });
 
     client.on('message', (topic, message) => {
@@ -117,47 +89,17 @@ function startChat() {
     });
 }
 
-// --- TYPING INDICATOR LOGIC ---
-function handleTyping() {
-    const el = document.getElementById('msg-input');
-    el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px';
-    client.publish(myRoom, JSON.stringify({ type: 'typing', user: myName }));
-}
-
-function showTyping(user) {
-    if (user === myName) return;
-    const ind = document.getElementById('typing-indicator');
-    ind.innerText = `${user} mengetik...`; 
-    ind.style.color = "#FFD700"; // Warna kuning saat ngetik
-    
-    clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => { 
-        // Balik ke default saat berhenti ngetik
-        ind.innerText = "from Amogenz"; 
-        ind.style.color = "#888"; // Balik ke abu-abu
-    }, 2000);
-}
-
-// --- UTILS & HELPERS ---
 function handleBackgroundUpload(input) {
     const file = input.files[0];
     if(file) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            try {
-                localStorage.setItem('aksara_bg_image', e.target.result);
-                document.body.style.backgroundImage = `url(${e.target.result})`;
-                alert("Background diganti!");
-            } catch (err) { alert("Gambar kebesaran! (Max 2MB)"); }
+            try { localStorage.setItem('aksara_bg_image', e.target.result); document.body.style.backgroundImage = `url(${e.target.result})`; alert("Background diganti!"); } catch (err) { alert("Gambar kebesaran! (Max 2MB)"); }
         }
         reader.readAsDataURL(file);
     }
 }
-function resetBackground() {
-    localStorage.removeItem('aksara_bg_image');
-    document.body.style.backgroundImage = "";
-    alert("Background dihapus.");
-}
+function resetBackground() { localStorage.removeItem('aksara_bg_image'); document.body.style.backgroundImage = ""; alert("Background dihapus."); }
 
 function getStorageKey() { return 'aksara_chat_history_' + myRoom; }
 function saveMessageToHistory(msgData) {
@@ -173,36 +115,23 @@ function loadChatHistory() {
     const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000);
     const freshHistory = history.filter(msg => msg.timestamp > threeDaysAgo);
     if(history.length !== freshHistory.length) localStorage.setItem(key, JSON.stringify(freshHistory));
-    
     const chatBox = document.getElementById('messages');
     chatBox.innerHTML = '<div class="welcome-msg">Riwayat chat dimuat.</div>';
     freshHistory.forEach(data => displayMessage(data, false));
 }
 function clearChatHistory() { localStorage.removeItem(getStorageKey()); }
 
-function toggleSound() {
-    isSoundOn = document.getElementById('sound-toggle').checked;
-    localStorage.setItem('aksara_sound', isSoundOn);
-}
-function toggleEnterSettings() {
-    sendOnEnter = document.getElementById('enter-toggle').checked;
-    localStorage.setItem('aksara_enter', sendOnEnter);
-}
+function toggleSound() { isSoundOn = document.getElementById('sound-toggle').checked; localStorage.setItem('aksara_sound', isSoundOn); }
+function toggleEnterSettings() { sendOnEnter = document.getElementById('enter-toggle').checked; localStorage.setItem('aksara_enter', sendOnEnter); }
 function updateOnlineList(user) { onlineUsers[user] = Date.now(); renderOnlineList(); }
-function cleanOnlineList() {
-    const now = Date.now();
-    for (const user in onlineUsers) { if (now - onlineUsers[user] > 25000) delete onlineUsers[user]; }
-    renderOnlineList();
-}
+function cleanOnlineList() { const now = Date.now(); for (const user in onlineUsers) { if (now - onlineUsers[user] > 25000) delete onlineUsers[user]; } renderOnlineList(); }
 function renderOnlineList() {
     const list = document.getElementById('online-list');
     const count = document.getElementById('online-count');
     list.innerHTML = ""; let total = 0;
     for (const user in onlineUsers) {
-        total++;
-        const li = document.createElement('li');
-        li.style.color = "#aaa"; li.style.marginBottom = "5px"; li.style.fontSize = "0.9rem";
-        li.innerHTML = `<span style="color:#0f0">●</span> ${user}`;
+        total++; const li = document.createElement('li');
+        li.style.color = "#aaa"; li.style.marginBottom = "5px"; li.style.fontSize = "0.9rem"; li.innerHTML = `<span style="color:#0f0">●</span> ${user}`;
         list.appendChild(li);
     }
     count.innerText = total;
@@ -216,14 +145,9 @@ function publishMessage(content, type = 'text') {
     client.publish(myRoom, JSON.stringify(payload));
     cancelReply();
 }
-
 function sendMessage() {
-    const input = document.getElementById('msg-input');
-    const text = input.value.trim();
-    if (text) {
-        publishMessage(text, 'text');
-        input.value = ''; input.style.height = 'auto'; input.focus();
-    }
+    const input = document.getElementById('msg-input'); const text = input.value.trim();
+    if (text) { publishMessage(text, 'text'); input.value = ''; input.style.height = 'auto'; input.focus(); }
 }
 function handleEnter(e) { if (e.key === 'Enter' && !e.shiftKey && sendOnEnter) { e.preventDefault(); sendMessage(); } }
 
@@ -241,8 +165,7 @@ async function toggleRecording() {
     if (!isRecording) {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            audioChunks = [];
+            mediaRecorder = new MediaRecorder(stream); audioChunks = [];
             mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
             mediaRecorder.onstop = () => {
                 audioBlobData = new Blob(audioChunks, { type: 'audio/webm' });
@@ -260,7 +183,6 @@ function sendVoiceNote() {
     reader.onloadend = () => { publishMessage(reader.result, 'audio'); cancelVoiceNote(); };
 }
 function cancelVoiceNote() { audioBlobData = null; document.getElementById('vn-preview-bar').style.display = 'none'; document.getElementById('main-input-area').style.display = 'flex'; }
-
 function handleImageUpload(input) {
     const file = input.files[0];
     if (file) {
@@ -268,10 +190,8 @@ function handleImageUpload(input) {
         reader.onload = function(e) {
             const img = new Image(); img.src = e.target.result;
             img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                const scale = 300 / img.width;
-                canvas.width = 300; canvas.height = img.height * scale;
+                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                const scale = 300 / img.width; canvas.width = 300; canvas.height = img.height * scale;
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 publishMessage(canvas.toDataURL('image/jpeg', 0.6), 'image');
             }
@@ -279,6 +199,17 @@ function handleImageUpload(input) {
         reader.readAsDataURL(file);
     }
     input.value = "";
+}
+function handleTyping() {
+    const el = document.getElementById('msg-input'); el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px';
+    client.publish(myRoom, JSON.stringify({ type: 'typing', user: myName }));
+}
+function showTyping(user) {
+    if (user === myName) return;
+    const ind = document.getElementById('typing-indicator');
+    ind.innerText = `${user} mengetik...`; ind.style.color = "#FFD700";
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => { ind.innerText = "from Amogenz"; ind.style.color = "#888"; }, 2000);
 }
 
 function displayMessage(data, saveToStorage = false) {
@@ -296,24 +227,34 @@ function displayMessage(data, saveToStorage = false) {
         div.innerText = `${data.user} ${data.content}`;
     } else {
         div.className = isMe ? 'message right' : 'message left';
-        let contentHtml = "";
-        let plainText = "Media";
+        let contentHtml = ""; let plainText = "Media";
         if (data.type === 'text') { contentHtml = `<span>${data.content}</span>`; plainText = data.content; }
         else if (data.type === 'image') contentHtml = `<img src="${data.content}" class="chat-image">`;
         else if (data.type === 'audio') contentHtml = `<audio controls src="${data.content}"></audio>`;
+
         let replyHtml = "";
         if(data.reply) {
-            replyHtml = `<div style="background:rgba(0,0,0,0.1); border-left:3px solid ${isMe?'#333':'#FFD700'}; padding:4px 8px; border-radius:4px; font-size:0.75rem; margin-bottom:4px; opacity:0.8;">
-                <b>${data.reply.user}</b><br>${data.reply.text.substring(0,20)}...
+            // Reply dibatasi panjangnya di CSS
+            replyHtml = `<div class="reply-quote">
+                <b>${data.reply.user}</b><br>${data.reply.text}
             </div>`;
         }
         const replyBtn = !isMe ? `<span onclick="setReply('${data.user}', '${plainText.replace(/'/g,"\\'")}')" style="cursor:pointer; margin-left:8px;">↩</span>` : '';
-        div.innerHTML = `${replyHtml}<span class="sender-name">${data.user}</span>${contentHtml}<div style="display:flex; justify-content:space-between; align-items:flex-end;">${replyBtn}<span class="time-info">${data.time}</span></div>`;
+        
+        // STRUKTUR BUBBLE BARU (Jam di float right)
+        div.innerHTML = `
+            ${replyHtml}
+            <span class="sender-name">${data.user}</span>
+            <div style="display:block;"> ${contentHtml}
+                <span class="time-info">${data.time} ${replyBtn}</span>
+            </div>
+        `;
     }
     chatBox.appendChild(div);
     window.scrollTo(0, document.body.scrollHeight);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
+
 function leaveRoom() {
     if(confirm("Keluar & Hapus Chat?")) {
         publishMessage("telah keluar.", 'system');
