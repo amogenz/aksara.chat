@@ -3,177 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aksara chat</title>
+    <title>Aksara V4 Ultimate</title>
+    <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-    <style>
-        /* --- SYSTEM RESET --- */
-        * { box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            margin: 0; background: #1A1A1A; color: #E0E0E0; 
-            height: 100vh; overflow: hidden; 
-        }
-        
-        /* --- LOGIN SCREEN --- */
-        #login-screen { 
-            display: flex; height: 100%; align-items: center; justify-content: center; 
-            flex-direction: column; background: #1A1A1A; padding: 20px; 
-            position: absolute; top: 0; left: 0; width: 100%; z-index: 999;
-        }
-        .login-box { 
-            background: #282828; padding: 30px; border-radius: 15px; 
-            width: 100%; max-width: 300px; text-align: center; 
-            border: 1px solid #FFD700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);
-        }
-        .login-box h2 { margin:0 0 10px 0; color: #FFD700; }
-        .login-box input { 
-            width: 100%; padding: 12px; margin: 10px 0; 
-            border: 1px solid #444; border-radius: 8px; outline: none; 
-            background: #333; color: #fff; transition: border 0.3s;
-        }
-        .login-box input:focus { border-color: #FFD700; }
-        .btn-start { 
-            width: 100%; padding: 12px; background: #FFD700; color: #1A1A1A; 
-            border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; 
-        }
-
-        /* --- SIDEBAR & OVERLAY --- */
-        #sidebar-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); z-index: 998; display: none;
-            backdrop-filter: blur(2px);
-        }
-        #sidebar {
-            position: fixed; top: 0; left: -280px; width: 260px; height: 100%;
-            background: #222; z-index: 999; transition: left 0.3s ease;
-            border-right: 1px solid #FFD700; padding: 20px;
-            display: flex; flex-direction: column;
-            box-shadow: 4px 0 15px rgba(0,0,0,0.5);
-        }
-        #sidebar.active { left: 0; }
-        
-        .sidebar-header { margin-bottom: 30px; border-bottom: 1px solid #444; padding-bottom: 15px; }
-        .sidebar-header h3 { color: #FFD700; margin: 0; font-size: 1.5rem; }
-        .sidebar-info { color: #888; font-size: 0.9rem; margin-top: 5px; }
-        .sidebar-info span { color: #ddd; font-weight: bold; }
-
-        .sidebar-btn {
-            background: transparent; color: #FFD700; border: 1px solid #FFD700;
-            padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer;
-            margin-top: auto; /* Dorong ke paling bawah */
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-            transition: 0.2s;
-        }
-        .sidebar-btn:hover { background: #FFD700; color: #1A1A1A; }
-        .sidebar-btn.danger { border-color: #ff4444; color: #ff4444; }
-        .sidebar-btn.danger:hover { background: #ff4444; color: white; }
-
-
-        /* --- CHAT SCREEN --- */
-        #chat-screen { display: none; flex-direction: column; height: 100%; width: 100%; }
-
-        header { 
-            background: #282828; color: #E0E0E0; padding: 10px 15px; 
-            display: flex; justify-content: space-between; align-items: center; 
-            position: fixed; top: 0; left: 0; width: 100%; z-index: 10;
-            height: 60px; border-bottom: 1px solid #333;
-        }
-        .header-left { display: flex; align-items: center; gap: 10px; }
-        .header-logo { width: 35px; height: 35px; border-radius: 50%; }
-        .header-title-text { font-size: 20px; font-weight: bold; color: #FFD700; }
-        
-        /* Hamburger Icon Animation */
-        .hamburger-icon { display: flex; flex-direction: column; justify-content: space-around; width: 25px; height: 25px; cursor: pointer; padding: 3px; }
-        .hamburger-line { width: 100%; height: 3px; background-color: #FFD700; border-radius: 2px; }
-
-        #messages { 
-            flex: 1; overflow-y: auto; padding: 15px; 
-            padding-top: 70px; padding-bottom: 90px; 
-            display: flex; flex-direction: column; gap: 12px; width: 100%;
-        }
-        
-        .message { 
-            max-width: 80%; padding: 10px; border-radius: 12px; 
-            font-size: 0.95rem; position: relative; word-wrap: break-word; 
-            display: flex; flex-direction: column;
-        }
-        .message.left { align-self: flex-start; background: #2A2A2A; color: #E0E0E0; border-bottom-left-radius: 2px; }
-        .message.right { align-self: flex-end; background: #FFD700; color: #1A1A1A; border-bottom-right-radius: 2px; }
-        
-        .sender-name { font-size: 0.7rem; margin-bottom: 4px; font-weight: bold; opacity: 0.8; }
-        .message.left .sender-name { color: #FFD700; }
-        .message.right .sender-name { display: none; }
-
-        .time-info { font-size: 0.6rem; margin-top: 5px; align-self: flex-end; opacity: 0.6; }
-        
-        .chat-image { width: 100%; border-radius: 8px; margin-top: 5px; max-width: 200px; }
-        audio { max-width: 200px; margin-top: 5px; height: 30px; }
-
-        /* --- TYPING INDICATOR --- */
-        #typing-indicator {
-            position: fixed; bottom: 75px; left: 20px; 
-            font-size: 0.75rem; color: #FFD700; 
-            font-style: italic; z-index: 9; opacity: 0; transition: opacity 0.3s;
-            background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 10px;
-        }
-
-        /* --- INPUT AREA --- */
-        .input-area { 
-            position: fixed; bottom: 0; left: 0; width: 100%; 
-            background: #1A1A1A; padding: 10px 10px 15px 10px;
-            display: flex; align-items: center; gap: 8px; 
-            border-top: 1px solid #333; z-index: 10;
-        }
-        .input-wrapper {
-            flex: 1; display: flex; background: #333; 
-            border-radius: 24px; padding: 5px 15px; align-items: center;
-        }
-        #msg-input { 
-            flex: 1; padding: 8px 0; border: none; 
-            background: transparent; color: #fff; outline: none; font-size: 1rem;
-        }
-        .icon-btn {
-            background: none; border: none; cursor: pointer; 
-            color: #FFD700; padding: 8px; display: flex; align-items: center; justify-content: center;
-        }
-        .icon-btn:active { transform: scale(0.9); }
-        .icon-btn svg { width: 24px; height: 24px; fill: currentColor; }
-        .recording { color: #ff4444 !important; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-
-        #send-btn {
-            background: #FFD700; color: #1A1A1A; 
-            width: 40px; height: 40px; border-radius: 50%; margin-left: 5px;
-        }
-        #send-btn svg { fill: #1A1A1A; width: 20px; height: 20px; transform: translateX(2px); }
-        #file-input { display: none; }
-    </style>
 </head>
 <body>
+
+    <audio id="notifSound" src="https://cdn.freesound.org/previews/553/553347_11636504-lq.mp3"></audio>
 
     <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div id="sidebar">
         <div class="sidebar-header">
             <h3>Aksara Menu</h3>
-            <div class="sidebar-info">Halo, <span id="side-user">User</span></div>
-            <div class="sidebar-info">Room: <span id="side-room">#...</span></div>
+            <div style="color:#888; font-size:0.9rem; margin-top:5px;">User: <span id="side-user" style="color:#FFD700">...</span></div>
         </div>
         
-        <div style="flex:1; color:#666; font-size:0.8rem;">
-            <p>Versi: 3.5 Ultimate</p>
-            <p>• Kirim Foto<br>• Voice Note<br>• Tema Gelap</p>
+        <div class="setting-row">
+            <span>Suara Notifikasi</span>
+            <label class="switch">
+                <input type="checkbox" id="sound-toggle" checked onchange="toggleSound()">
+                <span class="slider"></span>
+            </label>
         </div>
 
-        <button class="sidebar-btn danger" onclick="leaveRoom()">
-            <svg style="width:20px;height:20px;fill:currentColor" viewBox="0 0 24 24"><path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
-            Keluar Room
-        </button>
+        <div class="online-section">
+            <h4>Sedang Online:</h4>
+            <ul id="online-list">
+                </ul>
+        </div>
+
+        <button class="sidebar-btn" onclick="leaveRoom()">Keluar Room</button>
     </div>
 
     <div id="login-screen">
         <div class="login-box">
-            <h2>Aksara V3.5</h2>
-            <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 20px;">Fitur Sidebar & Logout</p>
+            <h2>Aksara V4</h2>
+            <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 20px;">VN Preview & Reply Feature</p>
             <input type="text" id="username" placeholder="Nama Kamu" autocomplete="off">
             <input type="text" id="room" placeholder="Kode Ruang" autocomplete="off">
             <button class="btn-start" onclick="startChat()">MASUK</button>
@@ -184,7 +49,9 @@
         <header>
             <div class="header-left">
                 <div class="hamburger-icon" onclick="toggleSidebar()">
-                    <div class="hamburger-line"></div><div class="hamburger-line"></div><div class="hamburger-line"></div>
+                    <div style="width:25px;height:3px;background:#FFD700;margin:4px 0;"></div>
+                    <div style="width:25px;height:3px;background:#FFD700;margin:4px 0;"></div>
+                    <div style="width:25px;height:3px;background:#FFD700;margin:4px 0;"></div>
                 </div>
                 <img src="https://i.imgur.com/Ct0pzwl.png" alt="Logo" class="header-logo">
                 <span class="header-title-text">Aksara</span>
@@ -194,231 +61,49 @@
         
         <div id="messages">
             <div style="text-align:center; color:#555; margin-top:20px; font-size:0.8rem;">
-                Chat room serverless.<br>Aman & Terenkripsi via MQTT.
+                Fitur Reply & VN Preview Aktif.
             </div>
         </div>
 
-        <div id="typing-indicator">Seseorang sedang mengetik...</div>
+        <div id="typing-indicator" style="position:fixed; bottom:90px; left:20px; font-size:0.75rem; color:#FFD700; opacity:0; transition:opacity 0.3s;">Seseorang mengetik...</div>
 
-        <div class="input-area">
-            <button class="icon-btn" onclick="document.getElementById('file-input').click()">
-                <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
-            </button>
-            <input type="file" id="file-input" accept="image/*" onchange="handleImageUpload(this)">
-
-            <div class="input-wrapper">
-                <input type="text" id="msg-input" placeholder="Ketik pesan..." onkeypress="handleEnter(event)" oninput="handleTyping()">
+        <div class="footer-container">
+            
+            <div id="reply-preview-bar">
+                <div>
+                    <div style="color:#FFD700; font-size:0.7rem; margin-bottom:2px;">Membalas ke <span id="reply-to-user">...</span></div>
+                    <div id="reply-preview-text">Isi pesan...</div>
+                </div>
+                <div class="close-prev" onclick="cancelReply()">✕</div>
             </div>
 
-            <button class="icon-btn" id="mic-btn" onclick="toggleRecording()">
-                <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
-            </button>
+            <div id="vn-preview-bar">
+                <audio id="vn-player" controls style="flex:1; height:30px;"></audio>
+                <button class="icon-btn" onclick="sendVoiceNote()" style="color:#00ff00;">✔</button>
+                <button class="icon-btn" onclick="cancelVoiceNote()" style="color:#ff4444;">✖</button>
+            </div>
 
-            <button id="send-btn" class="icon-btn" onclick="sendMessage()">
-                <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-            </button>
+            <div class="input-area" id="main-input-area">
+                <button class="icon-btn" onclick="document.getElementById('file-input').click()">
+                    <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                </button>
+                <input type="file" id="file-input" accept="image/*" onchange="handleImageUpload(this)">
+
+                <div class="input-wrapper">
+                    <input type="text" id="msg-input" placeholder="Ketik pesan..." onkeypress="handleEnter(event)" oninput="handleTyping()">
+                </div>
+
+                <button class="icon-btn" id="mic-btn" onclick="toggleRecording()">
+                    <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+                </button>
+
+                <button id="send-btn" class="icon-btn" onclick="sendMessage()">
+                    <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
+            </div>
         </div>
     </div>
 
-    <script>
-        let client;
-        let myName = "";
-        let myRoom = "";
-        let typingTimeout;
-        let mediaRecorder;
-        let audioChunks = [];
-        let isRecording = false;
-
-        // Auto-Load Nama/Room
-        window.onload = function() {
-            if(localStorage.getItem('aksara_name')) document.getElementById('username').value = localStorage.getItem('aksara_name');
-            if(localStorage.getItem('aksara_room')) document.getElementById('room').value = localStorage.getItem('aksara_room');
-        };
-
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-            if (sidebar.style.left === '0px') {
-                sidebar.style.left = '-280px';
-                overlay.style.display = 'none';
-            } else {
-                sidebar.style.left = '0px';
-                overlay.style.display = 'block';
-            }
-        }
-
-        // --- LOGOUT FUNCTION ---
-        function leaveRoom() {
-            if(confirm("Yakin mau keluar room?")) {
-                // 1. Kirim Notif Keluar
-                publishMessage("telah keluar room.", 'system');
-                
-                // 2. Tutup Sidebar
-                toggleSidebar();
-
-                // 3. Hapus Data Login (Biar bisa ganti akun)
-                localStorage.removeItem('aksara_name');
-                localStorage.removeItem('aksara_room');
-
-                // 4. Delay dikit biar pesan terkirim, lalu refresh
-                setTimeout(() => {
-                    location.reload(); 
-                }, 500);
-            }
-        }
-
-        function startChat() {
-            const user = document.getElementById('username').value.trim();
-            const room = document.getElementById('room').value.trim().toLowerCase();
-
-            if (!user || !room) { alert("Nama & Ruang wajib diisi!"); return; }
-
-            // Simpan Data Login
-            localStorage.setItem('aksara_name', user);
-            localStorage.setItem('aksara_room', room);
-
-            myName = user;
-            myRoom = "aksara-v3/" + room;
-
-            // Update Info Sidebar
-            document.getElementById('side-user').innerText = myName;
-            document.getElementById('side-room').innerText = "#" + room;
-
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('chat-screen').style.display = 'flex';
-            document.getElementById('room-display').innerText = "#" + room;
-
-            const options = { protocol: 'wss', type: 'mqtt' };
-            client = mqtt.connect('wss://broker.emqx.io:8084/mqtt', options);
-
-            client.on('connect', () => {
-                client.subscribe(myRoom);
-                publishMessage("bergabung ke chat.", 'system');
-            });
-
-            client.on('message', (topic, message) => {
-                if (topic === myRoom) {
-                    const data = JSON.parse(message.toString());
-                    if (data.type === 'typing') {
-                        showTyping(data.user);
-                    } else {
-                        displayMessage(data);
-                    }
-                }
-            });
-        }
-
-        function publishMessage(content, type = 'text') {
-            if (!content) return;
-            client.publish(myRoom, JSON.stringify({ type: 'typing', user: myName, status: false }));
-
-            const now = new Date();
-            const timeString = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
-            const payload = { user: myName, content: content, type: type, time: timeString };
-            client.publish(myRoom, JSON.stringify(payload));
-        }
-
-        function sendMessage() {
-            const input = document.getElementById('msg-input');
-            const text = input.value.trim();
-            if (text) {
-                publishMessage(text, 'text');
-                input.value = '';
-                input.focus();
-            }
-        }
-
-        function handleImageUpload(input) {
-            const file = input.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.src = e.target.result;
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        const maxWidth = 300;
-                        const scale = maxWidth / img.width;
-                        canvas.width = maxWidth;
-                        canvas.height = img.height * scale;
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        publishMessage(canvas.toDataURL('image/jpeg', 0.5), 'image');
-                    }
-                }
-                reader.readAsDataURL(file);
-            }
-            input.value = "";
-        }
-
-        async function toggleRecording() {
-            const micBtn = document.getElementById('mic-btn');
-            if (!isRecording) {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(stream);
-                    audioChunks = [];
-                    mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
-                    mediaRecorder.onstop = () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                        const reader = new FileReader();
-                        reader.readAsDataURL(audioBlob); 
-                        reader.onloadend = () => publishMessage(reader.result, 'audio');
-                    };
-                    mediaRecorder.start();
-                    isRecording = true;
-                    micBtn.classList.add('recording');
-                    document.getElementById('msg-input').placeholder = "Merekam...";
-                } catch (err) { alert("Izin mikrofon diperlukan!"); }
-            } else {
-                mediaRecorder.stop();
-                isRecording = false;
-                micBtn.classList.remove('recording');
-                document.getElementById('msg-input').placeholder = "Ketik pesan...";
-            }
-        }
-
-        function handleTyping() {
-            client.publish(myRoom, JSON.stringify({ type: 'typing', user: myName, status: true }));
-            clearTimeout(typingTimeout);
-            typingTimeout = setTimeout(() => {
-                client.publish(myRoom, JSON.stringify({ type: 'typing', user: myName, status: false }));
-            }, 2000);
-        }
-
-        function showTyping(user) {
-            if (user === myName) return;
-            const indicator = document.getElementById('typing-indicator');
-            indicator.innerText = `${user} sedang mengetik...`;
-            indicator.style.opacity = '1';
-            setTimeout(() => { indicator.style.opacity = '0'; }, 2000);
-        }
-
-        function displayMessage(data) {
-            const chatBox = document.getElementById('messages');
-            const div = document.createElement('div');
-            const isMe = data.user === myName;
-
-            if (data.type === 'system') {
-                div.style.textAlign = 'center'; div.style.fontSize = '0.7rem'; 
-                div.style.color = '#666'; div.innerText = `${data.user} ${data.content}`;
-            } else {
-                div.className = isMe ? 'message right' : 'message left';
-                let contentHtml = "";
-                if (data.type === 'text') contentHtml = `<span>${data.content}</span>`;
-                else if (data.type === 'image') contentHtml = `<img src="${data.content}" class="chat-image"><div style="font-size:0.7rem; margin-top:5px">📷 Foto</div>`;
-                else if (data.type === 'audio') contentHtml = `<audio controls src="${data.content}"></audio><div style="font-size:0.7rem; margin-top:5px">🎤 VN</div>`;
-
-                div.innerHTML = `<span class="sender-name">${data.user}</span>${contentHtml}<span class="time-info">${data.time}</span>`;
-            }
-            chatBox.appendChild(div);
-            window.scrollTo(0, document.body.scrollHeight);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        function handleEnter(e) { if (e.key === 'Enter') sendMessage(); }
-    </script>
+    <script src="script.js"></script>
 </body>
-                        </html>
-    
-
+</html>
