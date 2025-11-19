@@ -2,8 +2,8 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aksara V7 Fix</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+    <title>Aksara chat</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 </head>
@@ -15,13 +15,22 @@
     
     <div id="sidebar">
         <div class="sidebar-header">
-            <h3>Aksara Menu</h3>
+            <h3>Aksara Settings</h3>
             <div style="color:#888; font-size:0.9rem; margin-top:5px;">User: <span id="side-user" style="color:#FFD700">...</span></div>
         </div>
         
         <div class="setting-group">
+            <div class="setting-block">
+                <label class="setting-label">Ganti Background Chat</label>
+                <button class="permission-btn" onclick="document.getElementById('bg-input').click()">
+                    🖼️ Pilih Gambar Galeri
+                </button>
+                <button class="reset-btn" onclick="resetBackground()">Hapus Background</button>
+                <input type="file" id="bg-input" accept="image/*" onchange="handleBackgroundUpload(this)" style="display:none;">
+            </div>
+
             <div class="setting-row">
-                <span>Suara Aplikasi</span>
+                <span>Suara Chat</span>
                 <label class="switch">
                     <input type="checkbox" id="sound-toggle" checked onchange="toggleSound()">
                     <span class="slider"></span>
@@ -29,7 +38,7 @@
             </div>
 
             <div class="setting-row">
-                <span>Enter untuk Kirim</span>
+                <span>Enter = Kirim</span>
                 <label class="switch">
                     <input type="checkbox" id="enter-toggle" checked onchange="toggleEnterSettings()">
                     <span class="slider"></span>
@@ -37,8 +46,8 @@
             </div>
             
             <button class="permission-btn" onclick="requestNotifPermission()">
-                🔔 Aktifkan Notifikasi Sistem
-                <div style="font-size:0.7rem; opacity:0.7">Wajib agar bunyi saat layar mati</div>
+                🔔 Aktifkan Notifikasi Bar
+                <div style="font-size:0.7rem; opacity:0.7">Agar muncul notif saat keluar browser</div>
             </button>
         </div>
 
@@ -47,13 +56,13 @@
             <ul id="online-list"></ul>
         </div>
 
-        <button class="sidebar-btn" onclick="leaveRoom()">Keluar Room</button>
+        <button class="sidebar-btn" onclick="leaveRoom()">Keluar & Hapus Chat</button>
     </div>
 
     <div id="login-screen">
         <div class="login-box">
-            <h2>Aksara V7</h2>
-            <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 20px;">Layout Fix & Hidden Input</p>
+            <h2>Aksara chat</h2>
+            <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 20px;">From Amogenz</p>
             <input type="text" id="username" placeholder="Nama Panggilan" autocomplete="off">
             <input type="text" id="room" placeholder="Kode Ruang" autocomplete="off">
             <button class="btn-start" onclick="startChat()">MASUK CHAT</button>
@@ -68,18 +77,18 @@
                 </div>
                 <img src="https://i.imgur.com/Ct0pzwl.png" alt="Logo" class="header-logo">
                 
-                <span class="header-title-text">Aksara</span>
-                <span id="room-display" class="room-badge">#...</span>
+                <div class="header-info">
+                    <div style="display:flex; align-items:center;">
+                        <span class="header-title-text">Aksara</span>
+                        <span id="room-display" class="room-badge">#...</span>
+                    </div>
+                    <div id="typing-indicator">Menunggu pesan...</div>
+                </div>
             </div>
         </header>
         
         <div id="messages">
-            <div class="welcome-msg">
-                Selamat datang di Aksara.<br>Privasi terjaga, pesan hilang saat refresh.
             </div>
-        </div>
-
-        <div id="typing-indicator">Seseorang sedang mengetik...</div>
 
         <div class="footer-container">
             
