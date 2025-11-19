@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Aksara Chat</title>
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<style>
+/* Reset biar rapi */
+* { box-sizing: border-box; }
+body {
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+margin: 0;
+background: #eef1f5;
+height: 100vh;
+overflow: hidden; /* Supaya layar gak goyang */
+}
+
+/* --- HALAMAN LOGIN --- */
+#login-screen {
+display: flex;
+height: 100%;
+align-items: center;
+justify-content: center;
+flex-direction: column;
+background: #4a90e2;
+padding: 20px;
+position: absolute;
+top: 0; left: 0; width: 100%; z-index: 999;
+}
+.login-box {
+background: white;
+padding: 30px;
+border-radius: 15px;
+width: 100%;
+max-width: 300px;
+text-align: center;
+box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+.login-box input {
+width: 100%; padding: 12px; margin: 10px 0;
+border: 1px solid #ddd; border-radius: 8px; outline: none;
+}
+.btn-start {
+width: 100%; padding: 12px; background: #4a90e2; color: white;
+border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px;
+}
+
+/* --- HALAMAN CHAT --- */
+#chat-screen {
+display: none;
+flex-direction: column;
+height: 100%;
+width: 100%;
+}
+
+header {
+background: #4a90e2; color: white; padding: 15px;
+display: flex; justify-content: space-between; align-items: center;
+position: fixed; top: 0; left: 0; width: 100%; z-index: 10;
+height: 60px;
+}
+
+#messages {
+flex: 1;
+overflow-y: auto;
+padding: 20px;
+padding-top: 70px; /* Biar gak ketutup header */
+padding-bottom: 80px; /* Biar gak ketutup kotak input */
+display: flex;
+flex-direction: column;
+gap: 10px;
+width: 100%;
+}
+
+.message {
+max-width: 80%; padding: 10px 15px; border-radius: 15px;
+font-size: 0.95rem; position: relative; word-wrap: break-word;
+}
+.message.left { align-self: flex-start; background: white; color: #333; border-bottom-left-radius: 2px; }
+.message.right { align-self: flex-end; background: #d9fdd3; color: #111; border-bottom-right-radius: 2px; }
+.sender-name { font-size: 0.7rem; color: #666; margin-bottom: 2px; display: block; }
+
+/* --- KOTAK INPUT (PENTING) --- */
+.input-area {
+position: fixed; /* KUNCI DI BAWAH */
+bottom: 0;
+left: 0;
+width: 100%;
+background: white;
+padding: 10px;
+display: flex;
+gap: 10px;
+box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+z-index: 10;
+height: 70px; /* Tinggi pasti */
+align-items: center;
+}
+
+#msg-input {
+flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 25px;
+outline: none; font-size: 1rem; background: #f9f9f9;
+}
+#send-btn {
+background: #4a90e2; color: white; border: none;
+width: 45px; height: 45px; border-radius: 50%;
+font-weight: bold; cursor: pointer; font-size: 1.2rem;
+display: flex; align-items: center; justify-content: center;
+}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+<div class="login-box">
+<h2 style="margin:0 0 10px 0;">Aksara</h2>
+<p style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">Masukkan nama & kode ruang</p>
+<input type="text" id="username" placeholder="Nama Kamu" autocomplete="off">
+<input type="text" id="room" placeholder="Kode Ruang (misal: warkop)" autocomplete="off">
+<button class="btn-start" onclick="startChat()">MASUK CHAT</button>
+</div>
+</div>
+
+<div id="chat-screen">
+<header>
+<h1 style="margin:0; font-size:1.2rem;">Aksara</h1>
+<div id="room-display" style="background:rgba(255,255,255,0.2); padding:4px 10px; border-radius:15px; font-size:0.85rem;">...</div>
+</header>
+
+<div id="messages">
+<div style="text-align:center; color:#999; margin-top:20px; font-size:0.8rem;">Belum ada pesan. Mulai ngobrol!</div>
+</div>
+
+<div class="input-area">
+<input type="text" id="msg-input" placeholder="Tulis pesan..." onkeypress="handleEnter(event)">
+<button id="send-btn" onclick="sendMessage()">➤</button>
+</div>
+</div>
+
+<script>
+let client;
+let myName = "";
+let myRoom = "";
+
+function startChat() {
+const user = document.getElementById('username').value.trim();
+const room = document.getElementById('room').value.trim().toLowerCase();
+
+if (!user || !room) {
+alert("Nama dan Kode Ruang wajib diisi bray!");
+return;
+}
+
+myName = user;
+myRoom = "aksara-chat-public/" + room;
+
+// Pindah layar
+document.getElementById('login-screen').style.display = 'none';
+document.getElementById('chat-screen').style.display = 'flex';
+document.getElementById('room-display').innerText = "#" + room;
+
+// Koneksi Server
+const options = { protocol: 'wss', type: 'mqtt' };
+client = mqtt.connect('wss://broker.emqx.io:8084/mqtt', options);
+
+client.on('connect', () => {
+console.log('Connected');
+client.subscribe(myRoom);
+publishMessage("bergabung.", true);
+});
+
+client.on('message', (topic, message) => {
+if (topic === myRoom) {
+const msgData = JSON.parse(message.toString());
+displayMessage(msgData);
+}
+});
+}
+
+function publishMessage(text, isSystem = false) {
+if (!text) return;
+const payload = { user: myName, text: text, system: isSystem };
+client.publish(myRoom, JSON.stringify(payload));
+}
+
+function sendMessage() {
+const input = document.getElementById('msg-input');
+const text = input.value.trim();
+if (text) {
+publishMessage(text);
+input.value = '';
+input.focus();
+}
+}
+
+function displayMessage(data) {
+const chatBox = document.getElementById('messages');
+const div = document.createElement('div');
+
+if (data.system) {
+div.style.textAlign = 'center';
+div.style.fontSize = '0.75rem';
+div.style.color = '#888';
+div.style.margin = '10px 0';
+div.innerText = `${data.user} ${data.text}`;
+} else {
+div.classList.add('message');
+div.classList.add(data.user === myName ? 'right' : 'left');
+
+const sender = document.createElement('span');
+sender.classList.add('sender-name');
+sender.innerText = data.user;
+
+div.appendChild(sender);
+div.appendChild(document.createTextNode(data.text));
+}
+
+chatBox.appendChild(div);
+// Auto scroll ke paling bawah
+window.scrollTo(0, document.body.scrollHeight);
+chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function handleEnter(e) {
+if (e.key === 'Enter') sendMessage();
+}
+</script>
+</body>
+</html>
