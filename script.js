@@ -7,7 +7,6 @@ let sendOnEnter = true;
 let replyingTo = null;
 let onlineUsers = {};
 let typingTimeout;
-let isConnected = false;
 
 const notifAudio = document.getElementById('notifSound');
 
@@ -55,7 +54,7 @@ function toggleSidebar() {
     }
 }
 
-// --- CORE CONNECTION ---
+// --- CORE CONNECTION (DIUBAH KE HIVEMQ) ---
 function startChat() {
     const user = document.getElementById('username').value.trim();
     const room = document.getElementById('room').value.trim().toLowerCase();
@@ -64,7 +63,7 @@ function startChat() {
     localStorage.setItem('aksara_name', user);
     localStorage.setItem('aksara_room', room);
     myName = user;
-    myRoom = "aksara-v17/" + room;
+    myRoom = "aksara-v18/" + room; // Versi baru channel
 
     document.getElementById('side-user').innerText = myName;
     document.getElementById('login-screen').style.display = 'none';
@@ -73,30 +72,40 @@ function startChat() {
 
     loadChatHistory();
 
-    const options = { protocol: 'wss', type: 'mqtt', clean: true, reconnectPeriod: 1000 };
-    client = mqtt.connect('wss://broker.emqx.io:8084/mqtt', options);
+    // Opsi Koneksi Stabil
+    const options = { 
+        protocol: 'wss', // Wajib WSS untuk HTTPS
+        type: 'mqtt',
+        clean: true,
+        reconnectPeriod: 1000,
+        clientId: 'aksara_' + Math.random().toString(16).substr(2, 8)
+    };
+
+    // GANTI SERVER KE HIVEMQ (LEBIH STABIL)
+    client = mqtt.connect('wss://broker.hivemq.com:8884/mqtt', options);
 
     client.on('connect', () => {
-        isConnected = true;
+        console.log("Terhubung ke Server");
         client.subscribe(myRoom);
         publishMessage("bergabung.", 'system');
+        
+        // Heartbeat User Online
         setInterval(() => {
-            if(isConnected) {
-                client.publish(myRoom, JSON.stringify({ type: 'ping', user: myName }));
-                cleanOnlineList();
-            }
+            client.publish(myRoom, JSON.stringify({ type: 'ping', user: myName }));
+            cleanOnlineList();
         }, 10000);
     });
 
-    client.on('error', () => { isConnected = false; });
-    client.on('offline', () => { isConnected = false; });
-
+    client.on('error', (err) => { console.log("Error:", err); });
+    
     client.on('message', (topic, message) => {
         if (topic === myRoom) {
-            const data = JSON.parse(message.toString());
-            if (data.type === 'ping') { updateOnlineList(data.user); return; }
-            if (data.type === 'typing') { showTyping(data.user); return; }
-            displayMessage(data, true);
+            try {
+                const data = JSON.parse(message.toString());
+                if (data.type === 'ping') { updateOnlineList(data.user); return; }
+                if (data.type === 'typing') { showTyping(data.user); return; }
+                displayMessage(data, true);
+            } catch (e) { console.log("Error parse msg"); }
         }
     });
 }
@@ -155,19 +164,21 @@ function renderOnlineList() {
     count.innerText = total;
 }
 
+// --- MESSAGING LOGIC (UNBLOCKED) ---
 function publishMessage(content, type = 'text') {
     if (!content) return;
     
-    if (!isConnected) {
-        // Coba reconnect sekali lagi jika putus
-        client.reconnect();
-        // Tetap alert agar user tau
-        alert("Koneksi sedang dipulihkan... Coba sebentar lagi.");
-        return;
-    }
-
+    // HAPUS PENGECEKAN isConnected AGAR TIDAK MACET
+    // Biarkan library menghandle antrian jika koneksi lambat
+    
     const payload = { user: myName, content: content, type: type, reply: replyingTo };
-    client.publish(myRoom, JSON.stringify(payload));
+    
+    try {
+        client.publish(myRoom, JSON.stringify(payload));
+    } catch (e) {
+        alert("Gagal kirim. Cek internet kamu.");
+    }
+    
     cancelReply();
 }
 
@@ -179,7 +190,17 @@ function sendMessage() {
         input.value = ''; input.style.height = 'auto'; input.focus();
     }
 }
-function handleEnter(e) { if (e.key === 'Enter' && !e.shiftKey && sendOnEnter) { e.preventDefault(); sendMessage(); } }
+
+// Fix Tombol Enter
+function handleEnter(e) { 
+    // Cek jika Enter ditekan TANPA Shift
+    if (e.key === 'Enter' && !e.shiftKey) {
+        if(sendOnEnter) {
+            e.preventDefault(); // Cegah baris baru
+            sendMessage();
+        }
+    } 
+}
 
 function setReply(user, text) {
     replyingTo = { user: user, text: text };
@@ -233,7 +254,7 @@ function handleImageUpload(input) {
 }
 
 function handleTyping() {
-    if(isConnected) client.publish(myRoom, JSON.stringify({ type: 'typing', user: myName }));
+    if(client && client.connected) client.publish(myRoom, JSON.stringify({ type: 'typing', user: myName }));
     const el = document.getElementById('msg-input'); el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px';
 }
 function showTyping(user) {
@@ -295,7 +316,7 @@ function displayMessage(data, saveToStorage = false) {
 
 function leaveRoom() {
     if(confirm("Keluar & Hapus Chat?")) {
-        if(isConnected) publishMessage("telah keluar.", 'system');
+        if(client && client.connected) publishMessage("telah keluar.", 'system');
         clearChatHistory();
         localStorage.removeItem('aksara_name');
         localStorage.removeItem('aksara_room');
