@@ -8,15 +8,12 @@ let replyingTo = null;
 let onlineUsers = {};
 let typingTimeout;
 
-// Ambil Audio Element
 const notifAudio = document.getElementById('notifSound');
 
 window.onload = function() {
-    // Load Data Login
     if(localStorage.getItem('aksara_name')) document.getElementById('username').value = localStorage.getItem('aksara_name');
     if(localStorage.getItem('aksara_room')) document.getElementById('room').value = localStorage.getItem('aksara_room');
     
-    // Load Settings
     if(localStorage.getItem('aksara_sound')) {
         isSoundOn = (localStorage.getItem('aksara_sound') === 'true');
         document.getElementById('sound-toggle').checked = isSoundOn;
@@ -25,119 +22,67 @@ window.onload = function() {
         sendOnEnter = (localStorage.getItem('aksara_enter') === 'true');
         document.getElementById('enter-toggle').checked = sendOnEnter;
     }
-    
-    // Load Custom Background
     const savedBg = localStorage.getItem('aksara_bg_image');
-    if(savedBg) {
-        document.body.style.backgroundImage = `url(${savedBg})`;
-    }
+    if(savedBg) document.body.style.backgroundImage = `url(${savedBg})`;
 };
 
-// --- CUSTOM BACKGROUND LOGIC ---
-function handleBackgroundUpload(input) {
-    const file = input.files[0];
-    if(file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            // Simpan gambar (Base64) ke LocalStorage
-            try {
-                localStorage.setItem('aksara_bg_image', e.target.result);
-                document.body.style.backgroundImage = `url(${e.target.result})`;
-                alert("Background berhasil diganti!");
-            } catch (err) {
-                alert("Gambar terlalu besar untuk disimpan! Coba gambar yang lebih kecil (kurang dari 2MB).");
-            }
+function enableNotif() {
+    Notification.requestPermission().then(permission => {
+        closeNotifPopup();
+        if (permission === "granted") {
+            new Notification("Aksara", { body: "Notifikasi aktif!", icon: "https://i.imgur.com/Ct0pzwl.png" });
+        } else {
+            alert("Izin ditolak.");
         }
-        reader.readAsDataURL(file);
-    }
-}
-
-function resetBackground() {
-    localStorage.removeItem('aksara_bg_image');
-    document.body.style.backgroundImage = ""; // Kembali ke default CSS
-    alert("Background dihapus.");
-}
-
-// --- STORAGE & HISTORY LOGIC ---
-function getStorageKey() {
-    return 'aksara_chat_history_' + myRoom;
-}
-
-function saveMessageToHistory(msgData) {
-    // Tambahkan Timestamp Unix untuk filter 3 hari
-    msgData.timestamp = Date.now(); 
-    
-    let history = JSON.parse(localStorage.getItem(getStorageKey()) || "[]");
-    history.push(msgData);
-    
-    // Simpan max 50 pesan terakhir agar HP tidak berat
-    if(history.length > 50) history.shift(); 
-    
-    localStorage.setItem(getStorageKey(), JSON.stringify(history));
-}
-
-function loadChatHistory() {
-    const key = getStorageKey();
-    let history = JSON.parse(localStorage.getItem(key) || "[]");
-    
-    // Hapus pesan > 3 hari (3 * 24 jam * 60 menit * 60 detik * 1000 ms)
-    const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000);
-    const freshHistory = history.filter(msg => msg.timestamp > threeDaysAgo);
-    
-    // Update storage jika ada yang dihapus
-    if(history.length !== freshHistory.length) {
-        localStorage.setItem(key, JSON.stringify(freshHistory));
-    }
-    
-    // Render pesan
-    const chatBox = document.getElementById('messages');
-    // Bersihkan pesan welcome kecuali wrapper
-    chatBox.innerHTML = '<div class="welcome-msg">Riwayat chat dimuat (Maks 3 hari).</div>';
-    
-    freshHistory.forEach(data => {
-        displayMessage(data, false); // false = jangan simpan lagi (karena cuma load)
     });
 }
 
-function clearChatHistory() {
-    localStorage.removeItem(getStorageKey());
+function checkNotifPermission() {
+    if (!("Notification" in window)) return;
+    if (Notification.permission === 'default') {
+        document.getElementById('notif-popup').style.display = 'flex';
+    }
 }
 
-// --- APP LOGIC ---
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    const isActive = sidebar.style.left === '0px';
-    sidebar.style.left = isActive ? '-280px' : '0px';
-    overlay.style.display = isActive ? 'none' : 'block';
-}
-
-function toggleSound() {
-    isSoundOn = document.getElementById('sound-toggle').checked;
-    localStorage.setItem('aksara_sound', isSoundOn);
-}
-function toggleEnterSettings() {
-    sendOnEnter = document.getElementById('enter-toggle').checked;
-    localStorage.setItem('aksara_enter', sendOnEnter);
-}
-
-function requestNotifPermission() {
-    if (!("Notification" in window)) { alert("HP ini tidak support notif sistem."); return; }
-    Notification.requestPermission().then(p => {
-        if(p==="granted") alert("Notif Aktif!"); else alert("Ditolak.");
-    });
-}
+function closeNotifPopup() { document.getElementById('notif-popup').style.display = 'none'; }
 
 function sendSystemNotification(user, text) {
-    // Kirim notif jika User sedang tidak melihat tab (hidden)
     if (document.visibilityState === "hidden" && Notification.permission === "granted") {
         const notif = new Notification(`Aksara: ${user}`, {
-            body: text, icon: "https://i.imgur.com/Ct0pzwl.png", vibrate: [200, 100, 200]
+            body: text, icon: "https://i.imgur.com/Ct0pzwl.png", vibrate: [200, 100, 200], tag: 'aksara-msg'
         });
         notif.onclick = function() { window.focus(); this.close(); };
     }
 }
 
+// --- SIDEBAR & VIDEO LOGIC ---
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    const video = document.getElementById('sidebar-video'); // Ambil elemen video
+
+    const isActive = sidebar.style.left === '0px';
+
+    if (isActive) {
+        // Sidebar TUTUP
+        sidebar.style.left = '-280px';
+        overlay.style.display = 'none';
+        if(video) {
+            video.pause();
+            video.currentTime = 0; // Reset video ke awal
+        }
+    } else {
+        // Sidebar BUKA
+        sidebar.style.left = '0px';
+        overlay.style.display = 'block';
+        if(video) {
+            // Coba play video (kadang browser blokir kalau gak di-mute)
+            video.play().catch(e => console.log("Autoplay blocked", e));
+        }
+    }
+}
+
+// --- APP LOGIC ---
 function startChat() {
     const user = document.getElementById('username').value.trim();
     const room = document.getElementById('room').value.trim().toLowerCase();
@@ -146,14 +91,14 @@ function startChat() {
     localStorage.setItem('aksara_name', user);
     localStorage.setItem('aksara_room', room);
     myName = user;
-    myRoom = "aksara-v8/" + room; // V8 Room
+    myRoom = "aksara-v11/" + room;
 
     document.getElementById('side-user').innerText = myName;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('chat-screen').style.display = 'flex';
     document.getElementById('room-display').innerText = "#" + room;
 
-    // LOAD HISTORY DULU
+    checkNotifPermission();
     loadChatHistory();
 
     const options = { protocol: 'wss', type: 'mqtt' };
@@ -173,9 +118,60 @@ function startChat() {
             const data = JSON.parse(message.toString());
             if (data.type === 'ping') { updateOnlineList(data.user); return; }
             if (data.type === 'typing') { showTyping(data.user); return; }
-            displayMessage(data, true); // true = simpan pesan baru ini
+            displayMessage(data, true);
         }
     });
+}
+
+// (Fungsi-fungsi lain tetap sama)
+function handleBackgroundUpload(input) {
+    const file = input.files[0];
+    if(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                localStorage.setItem('aksara_bg_image', e.target.result);
+                document.body.style.backgroundImage = `url(${e.target.result})`;
+                alert("Background diganti!");
+            } catch (err) { alert("Gambar kebesaran!"); }
+        }
+        reader.readAsDataURL(file);
+    }
+}
+function resetBackground() {
+    localStorage.removeItem('aksara_bg_image');
+    document.body.style.backgroundImage = "";
+    alert("Background dihapus.");
+}
+
+function getStorageKey() { return 'aksara_chat_history_' + myRoom; }
+function saveMessageToHistory(msgData) {
+    msgData.timestamp = Date.now(); 
+    let history = JSON.parse(localStorage.getItem(getStorageKey()) || "[]");
+    history.push(msgData);
+    if(history.length > 50) history.shift(); 
+    localStorage.setItem(getStorageKey(), JSON.stringify(history));
+}
+function loadChatHistory() {
+    const key = getStorageKey();
+    let history = JSON.parse(localStorage.getItem(key) || "[]");
+    const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000);
+    const freshHistory = history.filter(msg => msg.timestamp > threeDaysAgo);
+    if(history.length !== freshHistory.length) localStorage.setItem(key, JSON.stringify(freshHistory));
+    
+    const chatBox = document.getElementById('messages');
+    chatBox.innerHTML = '<div class="welcome-msg">Riwayat chat dimuat.</div>';
+    freshHistory.forEach(data => displayMessage(data, false));
+}
+function clearChatHistory() { localStorage.removeItem(getStorageKey()); }
+
+function toggleSound() {
+    isSoundOn = document.getElementById('sound-toggle').checked;
+    localStorage.setItem('aksara_sound', isSoundOn);
+}
+function toggleEnterSettings() {
+    sendOnEnter = document.getElementById('enter-toggle').checked;
+    localStorage.setItem('aksara_enter', sendOnEnter);
 }
 
 function updateOnlineList(user) { onlineUsers[user] = Date.now(); renderOnlineList(); }
@@ -202,12 +198,7 @@ function publishMessage(content, type = 'text') {
     if (!content) return;
     const now = new Date();
     const timeString = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
-    
-    const payload = { 
-        user: myName, content: content, type: type, 
-        time: timeString, reply: replyingTo 
-    };
-
+    const payload = { user: myName, content: content, type: type, time: timeString, reply: replyingTo };
     client.publish(myRoom, JSON.stringify(payload));
     cancelReply();
 }
@@ -220,12 +211,7 @@ function sendMessage() {
         input.value = ''; input.style.height = 'auto'; input.focus();
     }
 }
-
-function handleEnter(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        if (sendOnEnter) { e.preventDefault(); sendMessage(); }
-    }
-}
+function handleEnter(e) { if (e.key === 'Enter' && !e.shiftKey && sendOnEnter) { e.preventDefault(); sendMessage(); } }
 
 function setReply(user, text) {
     replyingTo = { user: user, text: text };
@@ -234,12 +220,8 @@ function setReply(user, text) {
     document.getElementById('reply-preview-text').innerText = text;
     document.getElementById('msg-input').focus();
 }
-function cancelReply() {
-    replyingTo = null;
-    document.getElementById('reply-preview-bar').style.display = 'none';
-}
+function cancelReply() { replyingTo = null; document.getElementById('reply-preview-bar').style.display = 'none'; }
 
-// --- MEDIA ---
 async function toggleRecording() {
     const micBtn = document.getElementById('mic-btn');
     if (!isRecording) {
@@ -254,24 +236,17 @@ async function toggleRecording() {
                 document.getElementById('vn-preview-bar').style.display = 'flex';
                 document.getElementById('main-input-area').style.display = 'none';
             };
-            mediaRecorder.start();
-            isRecording = true;
-            micBtn.classList.add('recording');
+            mediaRecorder.start(); isRecording = true; micBtn.classList.add('recording');
         } catch (err) { alert("Butuh izin mic!"); }
-    } else {
-        mediaRecorder.stop(); isRecording = false; micBtn.classList.remove('recording');
-    }
+    } else { mediaRecorder.stop(); isRecording = false; micBtn.classList.remove('recording'); }
 }
 function sendVoiceNote() {
     const reader = new FileReader();
     reader.readAsDataURL(audioBlobData); 
     reader.onloadend = () => { publishMessage(reader.result, 'audio'); cancelVoiceNote(); };
 }
-function cancelVoiceNote() {
-    audioBlobData = null;
-    document.getElementById('vn-preview-bar').style.display = 'none';
-    document.getElementById('main-input-area').style.display = 'flex';
-}
+function cancelVoiceNote() { audioBlobData = null; document.getElementById('vn-preview-bar').style.display = 'none'; document.getElementById('main-input-area').style.display = 'flex'; }
+
 function handleImageUpload(input) {
     const file = input.files[0];
     if (file) {
@@ -292,24 +267,17 @@ function handleImageUpload(input) {
     input.value = "";
 }
 
-// --- UI ---
 function handleTyping() {
     const el = document.getElementById('msg-input');
     el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px';
     client.publish(myRoom, JSON.stringify({ type: 'typing', user: myName }));
 }
-
 function showTyping(user) {
     if (user === myName) return;
     const ind = document.getElementById('typing-indicator');
-    ind.innerText = `${user} mengetik...`; 
-    ind.style.color = "#FFD700";
-    
+    ind.innerText = `${user} mengetik...`; ind.style.opacity = '1';
     clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => { 
-        ind.innerText = "From Amogenz"; 
-        ind.style.color = "#aaa";
-    }, 2000);
+    typingTimeout = setTimeout(() => { ind.style.opacity = '0'; }, 2000);
 }
 
 function displayMessage(data, saveToStorage = false) {
@@ -317,11 +285,7 @@ function displayMessage(data, saveToStorage = false) {
     const div = document.createElement('div');
     const isMe = data.user === myName;
 
-    // Simpan ke History jika diminta (pesan baru masuk)
-    if(saveToStorage && data.type !== 'system') {
-        saveMessageToHistory(data);
-    }
-
+    if(saveToStorage && data.type !== 'system') saveMessageToHistory(data);
     if (!isMe && data.type !== 'system' && saveToStorage) {
         if (isSoundOn) notifAudio.play().catch(() => {});
         sendSystemNotification(data.user, data.type === 'text' ? data.content : 'Mengirim media');
@@ -333,7 +297,6 @@ function displayMessage(data, saveToStorage = false) {
         div.innerText = `${data.user} ${data.content}`;
     } else {
         div.className = isMe ? 'message right' : 'message left';
-        
         let contentHtml = "";
         let plainText = "Media";
         if (data.type === 'text') { contentHtml = `<span>${data.content}</span>`; plainText = data.content; }
@@ -346,18 +309,9 @@ function displayMessage(data, saveToStorage = false) {
                 <b>${data.reply.user}</b><br>${data.reply.text.substring(0,20)}...
             </div>`;
         }
-
         const replyBtn = !isMe ? `<span onclick="setReply('${data.user}', '${plainText.replace(/'/g,"\\'")}')" style="cursor:pointer; margin-left:8px;">↩</span>` : '';
 
-        div.innerHTML = `
-            ${replyHtml}
-            <span class="sender-name">${data.user}</span>
-            ${contentHtml}
-            <div style="display:flex; justify-content:space-between; align-items:flex-end;">
-                ${replyBtn}
-                <span class="time-info">${data.time}</span>
-            </div>
-        `;
+        div.innerHTML = `${replyHtml}<span class="sender-name">${data.user}</span>${contentHtml}<div style="display:flex; justify-content:space-between; align-items:flex-end;">${replyBtn}<span class="time-info">${data.time}</span></div>`;
     }
     chatBox.appendChild(div);
     window.scrollTo(0, document.body.scrollHeight);
@@ -366,8 +320,8 @@ function displayMessage(data, saveToStorage = false) {
 
 function leaveRoom() {
     if(confirm("Keluar & Hapus Chat?")) {
-        publishMessage("keluar.", 'system');
-        clearChatHistory(); // Hapus history
+        publishMessage("telah keluar.", 'system');
+        clearChatHistory();
         localStorage.removeItem('aksara_name');
         localStorage.removeItem('aksara_room');
         location.reload();
