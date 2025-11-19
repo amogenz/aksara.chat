@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-    <title>Aksara V12 UI Polish</title>
+    <title>Aksara V13 Final</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 </head>
@@ -15,10 +15,10 @@
         <div class="notif-box">
             <div style="font-size: 2rem;">🔔</div>
             <h3>Nyalakan Notifikasi?</h3>
-            <p>Supaya kamu tahu kalau ada pesan masuk saat layar mati atau buka aplikasi lain.</p>
+            <p>Supaya kamu tahu kalau ada pesan masuk saat layar mati.</p>
             <div class="notif-buttons">
                 <button class="btn-allow" onclick="enableNotif()">Izinkan</button>
-                <button class="btn-later" onclick="closeNotifPopup()">Nanti Saja</button>
+                <button class="btn-later" onclick="closeNotifPopup()">Nanti</button>
             </div>
         </div>
     </div>
@@ -34,10 +34,8 @@
         <div class="setting-group">
             <div class="setting-block">
                 <label class="setting-label">Background Chat</label>
-                <button class="permission-btn" onclick="document.getElementById('bg-input').click()">
-                    🖼️ Pilih Gambar Galeri
-                </button>
-                <button class="reset-btn" onclick="resetBackground()">Hapus Background</button>
+                <button class="permission-btn" onclick="document.getElementById('bg-input').click()">🖼️ Ganti Wallpaper</button>
+                <button class="reset-btn" onclick="resetBackground()">Hapus Wallpaper</button>
                 <input type="file" id="bg-input" accept="image/*" onchange="handleBackgroundUpload(this)" style="display:none;">
             </div>
 
@@ -57,13 +55,11 @@
                 </label>
             </div>
             
-            <button class="permission-btn" onclick="enableNotif()">
-                🔔 Cek Izin Notifikasi
-            </button>
+            <button class="permission-btn" onclick="enableNotif()">🔔 Cek Izin Notif</button>
         </div>
 
         <div class="online-section">
-            <h4>Sedang Online (<span id="online-count">0</span>)</h4>
+            <h4>Online (<span id="online-count">0</span>)</h4>
             <ul id="online-list"></ul>
         </div>
 
@@ -71,16 +67,16 @@
             <video id="sidebar-video" src="video.mp4" muted playsinline loop></video>
         </div>
 
-        <button class="sidebar-btn" onclick="leaveRoom()">Keluar & Hapus Chat</button>
+        <button class="sidebar-btn" onclick="leaveRoom()">Keluar</button>
     </div>
 
     <div id="login-screen">
         <div class="login-box">
-            <h2>Aksara V12</h2>
-            <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 20px;">Smoother UI & Branding</p>
+            <h2>Aksara V13</h2>
+            <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 20px;">Final Polish & Branding</p>
             <input type="text" id="username" placeholder="Nama Panggilan" autocomplete="off">
             <input type="text" id="room" placeholder="Kode Ruang" autocomplete="off">
-            <button class="btn-start" onclick="startChat()">MASUK CHAT</button>
+            <button class="btn-start" onclick="startChat()">MASUK</button>
         </div>
         
         <div class="branding-footer">
@@ -102,7 +98,7 @@
                         <span class="header-title-text">Aksara</span>
                         <span id="room-display" class="room-badge">#...</span>
                     </div>
-                    <div id="typing-indicator"></div> 
+                    <div id="typing-indicator">from Amogenz</div> 
                 </div>
             </div>
         </header>
@@ -112,7 +108,7 @@
         <div class="footer-container">
             <div id="reply-preview-bar">
                 <div style="flex:1; overflow:hidden;">
-                    <div style="color:#FFD700; font-size:0.7rem; margin-bottom:2px;">Membalas <b id="reply-to-user">...</b></div>
+                    <div style="color:#FFD700; font-size:0.7rem;">Membalas <b id="reply-to-user">...</b></div>
                     <div id="reply-preview-text">...</div>
                 </div>
                 <div class="close-prev" onclick="cancelReply()">✕</div>
