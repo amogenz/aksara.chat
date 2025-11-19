@@ -75,7 +75,7 @@ body {
     font-size: 0.8rem; gap: 5px; 
 }
 .branding-logo {
-    width: 28px; height: 28px; object-fit: contain; 
+    width: 50px; height: 28px; object-fit: contain; 
     filter: grayscale(100%) brightness(150%); 
 }
 
