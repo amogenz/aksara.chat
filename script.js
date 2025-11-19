@@ -307,7 +307,7 @@ function showTyping(user) {
     
     clearTimeout(typingTimeout);
     typingTimeout = setTimeout(() => { 
-        ind.innerText = "Menunggu pesan..."; 
+        ind.innerText = "From Amogenz"; 
         ind.style.color = "#aaa";
     }, 2000);
 }
