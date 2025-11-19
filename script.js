@@ -43,7 +43,6 @@ function checkNotifPermission() {
         document.getElementById('notif-popup').style.display = 'flex';
     }
 }
-
 function closeNotifPopup() { document.getElementById('notif-popup').style.display = 'none'; }
 
 function sendSystemNotification(user, text) {
@@ -55,34 +54,21 @@ function sendSystemNotification(user, text) {
     }
 }
 
-// --- SIDEBAR & VIDEO LOGIC ---
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
-    const video = document.getElementById('sidebar-video'); // Ambil elemen video
-
+    const video = document.getElementById('sidebar-video');
     const isActive = sidebar.style.left === '0px';
 
     if (isActive) {
-        // Sidebar TUTUP
-        sidebar.style.left = '-280px';
-        overlay.style.display = 'none';
-        if(video) {
-            video.pause();
-            video.currentTime = 0; // Reset video ke awal
-        }
+        sidebar.style.left = '-280px'; overlay.style.display = 'none';
+        if(video) { video.pause(); video.currentTime = 0; }
     } else {
-        // Sidebar BUKA
-        sidebar.style.left = '0px';
-        overlay.style.display = 'block';
-        if(video) {
-            // Coba play video (kadang browser blokir kalau gak di-mute)
-            video.play().catch(e => console.log("Autoplay blocked", e));
-        }
+        sidebar.style.left = '0px'; overlay.style.display = 'block';
+        if(video) { video.play().catch(e => console.log("Autoplay blocked", e)); }
     }
 }
 
-// --- APP LOGIC ---
 function startChat() {
     const user = document.getElementById('username').value.trim();
     const room = document.getElementById('room').value.trim().toLowerCase();
@@ -91,7 +77,7 @@ function startChat() {
     localStorage.setItem('aksara_name', user);
     localStorage.setItem('aksara_room', room);
     myName = user;
-    myRoom = "aksara-v11/" + room;
+    myRoom = "aksara-v12/" + room;
 
     document.getElementById('side-user').innerText = myName;
     document.getElementById('login-screen').style.display = 'none';
@@ -123,7 +109,7 @@ function startChat() {
     });
 }
 
-// (Fungsi-fungsi lain tetap sama)
+// ... (Sisa fungsi sama, lanjutkan dari sini) ...
 function handleBackgroundUpload(input) {
     const file = input.files[0];
     if(file) {
@@ -143,7 +129,6 @@ function resetBackground() {
     document.body.style.backgroundImage = "";
     alert("Background dihapus.");
 }
-
 function getStorageKey() { return 'aksara_chat_history_' + myRoom; }
 function saveMessageToHistory(msgData) {
     msgData.timestamp = Date.now(); 
@@ -164,7 +149,6 @@ function loadChatHistory() {
     freshHistory.forEach(data => displayMessage(data, false));
 }
 function clearChatHistory() { localStorage.removeItem(getStorageKey()); }
-
 function toggleSound() {
     isSoundOn = document.getElementById('sound-toggle').checked;
     localStorage.setItem('aksara_sound', isSoundOn);
@@ -173,7 +157,6 @@ function toggleEnterSettings() {
     sendOnEnter = document.getElementById('enter-toggle').checked;
     localStorage.setItem('aksara_enter', sendOnEnter);
 }
-
 function updateOnlineList(user) { onlineUsers[user] = Date.now(); renderOnlineList(); }
 function cleanOnlineList() {
     const now = Date.now();
@@ -193,7 +176,6 @@ function renderOnlineList() {
     }
     count.innerText = total;
 }
-
 function publishMessage(content, type = 'text') {
     if (!content) return;
     const now = new Date();
@@ -202,7 +184,6 @@ function publishMessage(content, type = 'text') {
     client.publish(myRoom, JSON.stringify(payload));
     cancelReply();
 }
-
 function sendMessage() {
     const input = document.getElementById('msg-input');
     const text = input.value.trim();
@@ -212,7 +193,6 @@ function sendMessage() {
     }
 }
 function handleEnter(e) { if (e.key === 'Enter' && !e.shiftKey && sendOnEnter) { e.preventDefault(); sendMessage(); } }
-
 function setReply(user, text) {
     replyingTo = { user: user, text: text };
     document.getElementById('reply-preview-bar').style.display = 'flex';
@@ -221,7 +201,6 @@ function setReply(user, text) {
     document.getElementById('msg-input').focus();
 }
 function cancelReply() { replyingTo = null; document.getElementById('reply-preview-bar').style.display = 'none'; }
-
 async function toggleRecording() {
     const micBtn = document.getElementById('mic-btn');
     if (!isRecording) {
@@ -246,7 +225,6 @@ function sendVoiceNote() {
     reader.onloadend = () => { publishMessage(reader.result, 'audio'); cancelVoiceNote(); };
 }
 function cancelVoiceNote() { audioBlobData = null; document.getElementById('vn-preview-bar').style.display = 'none'; document.getElementById('main-input-area').style.display = 'flex'; }
-
 function handleImageUpload(input) {
     const file = input.files[0];
     if (file) {
@@ -266,7 +244,6 @@ function handleImageUpload(input) {
     }
     input.value = "";
 }
-
 function handleTyping() {
     const el = document.getElementById('msg-input');
     el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px';
@@ -275,22 +252,19 @@ function handleTyping() {
 function showTyping(user) {
     if (user === myName) return;
     const ind = document.getElementById('typing-indicator');
-    ind.innerText = `${user} mengetik...`; ind.style.opacity = '1';
+    ind.innerText = `${user} mengetik...`; ind.style.color = "#FFD700";
     clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => { ind.style.opacity = '0'; }, 2000);
+    typingTimeout = setTimeout(() => { ind.innerText = ""; ind.style.color = "#aaa"; }, 2000);
 }
-
 function displayMessage(data, saveToStorage = false) {
     const chatBox = document.getElementById('messages');
     const div = document.createElement('div');
     const isMe = data.user === myName;
-
     if(saveToStorage && data.type !== 'system') saveMessageToHistory(data);
     if (!isMe && data.type !== 'system' && saveToStorage) {
         if (isSoundOn) notifAudio.play().catch(() => {});
         sendSystemNotification(data.user, data.type === 'text' ? data.content : 'Mengirim media');
     }
-
     if (data.type === 'system') {
         div.style.textAlign = 'center'; div.style.fontSize = '0.75rem'; 
         div.style.color = '#888'; div.style.margin = "10px 0";
@@ -302,7 +276,6 @@ function displayMessage(data, saveToStorage = false) {
         if (data.type === 'text') { contentHtml = `<span>${data.content}</span>`; plainText = data.content; }
         else if (data.type === 'image') contentHtml = `<img src="${data.content}" class="chat-image">`;
         else if (data.type === 'audio') contentHtml = `<audio controls src="${data.content}"></audio>`;
-
         let replyHtml = "";
         if(data.reply) {
             replyHtml = `<div style="background:rgba(0,0,0,0.1); border-left:3px solid ${isMe?'#333':'#FFD700'}; padding:4px 8px; border-radius:4px; font-size:0.75rem; margin-bottom:4px; opacity:0.8;">
@@ -310,14 +283,12 @@ function displayMessage(data, saveToStorage = false) {
             </div>`;
         }
         const replyBtn = !isMe ? `<span onclick="setReply('${data.user}', '${plainText.replace(/'/g,"\\'")}')" style="cursor:pointer; margin-left:8px;">↩</span>` : '';
-
         div.innerHTML = `${replyHtml}<span class="sender-name">${data.user}</span>${contentHtml}<div style="display:flex; justify-content:space-between; align-items:flex-end;">${replyBtn}<span class="time-info">${data.time}</span></div>`;
     }
     chatBox.appendChild(div);
     window.scrollTo(0, document.body.scrollHeight);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
-
 function leaveRoom() {
     if(confirm("Keluar & Hapus Chat?")) {
         publishMessage("telah keluar.", 'system');
