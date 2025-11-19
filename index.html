@@ -3,33 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aksara V4 Ultimate</title>
+    <title>Aksara chat</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 </head>
 <body>
 
-    <audio id="notifSound" src="https://cdn.freesound.org/previews/553/553347_11636504-lq.mp3"></audio>
+    <audio id="notifSound" src="https://cdn.freesound.org/previews/553/553347_11636504-lq.mp3" preload="auto"></audio>
 
     <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+    
     <div id="sidebar">
         <div class="sidebar-header">
             <h3>Aksara Menu</h3>
             <div style="color:#888; font-size:0.9rem; margin-top:5px;">User: <span id="side-user" style="color:#FFD700">...</span></div>
         </div>
         
-        <div class="setting-row">
-            <span>Suara Notifikasi</span>
-            <label class="switch">
-                <input type="checkbox" id="sound-toggle" checked onchange="toggleSound()">
-                <span class="slider"></span>
-            </label>
+        <div class="setting-group">
+            <div class="setting-row">
+                <span>Suara Aplikasi</span>
+                <label class="switch">
+                    <input type="checkbox" id="sound-toggle" checked onchange="toggleSound()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-row">
+                <span>Enter untuk Kirim</span>
+                <label class="switch">
+                    <input type="checkbox" id="enter-toggle" checked onchange="toggleEnterSettings()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <button class="permission-btn" onclick="requestNotifPermission()">
+                🔔 Aktifkan Notifikasi Sistem
+                <div style="font-size:0.7rem; opacity:0.7">Wajib agar bunyi saat layar mati</div>
+            </button>
         </div>
 
         <div class="online-section">
-            <h4>Sedang Online:</h4>
-            <ul id="online-list">
-                </ul>
+            <h4>Sedang Online (<span id="online-count">0</span>)</h4>
+            <ul id="online-list"></ul>
         </div>
 
         <button class="sidebar-btn" onclick="leaveRoom()">Keluar Room</button>
@@ -37,11 +52,11 @@
 
     <div id="login-screen">
         <div class="login-box">
-            <h2>Aksara V4</h2>
-            <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 20px;">VN Preview & Reply Feature</p>
-            <input type="text" id="username" placeholder="Nama Kamu" autocomplete="off">
+            <h2>Aksara</h2>
+            <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 20px;">Fitur Enter Option & Textarea</p>
+            <input type="text" id="username" placeholder="Nama Panggilan" autocomplete="off">
             <input type="text" id="room" placeholder="Kode Ruang" autocomplete="off">
-            <button class="btn-start" onclick="startChat()">MASUK</button>
+            <button class="btn-start" onclick="startChat()">MASUK CHAT</button>
         </div>
     </div>
 
@@ -49,38 +64,40 @@
         <header>
             <div class="header-left">
                 <div class="hamburger-icon" onclick="toggleSidebar()">
-                    <div style="width:25px;height:3px;background:#FFD700;margin:4px 0;"></div>
-                    <div style="width:25px;height:3px;background:#FFD700;margin:4px 0;"></div>
-                    <div style="width:25px;height:3px;background:#FFD700;margin:4px 0;"></div>
+                    <span></span><span></span><span></span>
                 </div>
                 <img src="https://i.imgur.com/Ct0pzwl.png" alt="Logo" class="header-logo">
-                <span class="header-title-text">Aksara</span>
+                <div style="display:flex; flex-direction:column;">
+                    <span class="header-title-text">Aksara</span>
+                    <span id="room-display" style="font-size:0.7rem; color:#FFD700; opacity:0.8;">...</span>
+                </div>
             </div>
-            <div id="room-display" style="font-size:0.8rem; color:#888;">...</div>
         </header>
         
         <div id="messages">
-            <div style="text-align:center; color:#555; margin-top:20px; font-size:0.8rem;">
-                Fitur Reply & VN Preview Aktif.
+            <div class="welcome-msg">
+                Selamat datang di Aksara.<br>Cek Sidebar untuk atur tombol Enter.
             </div>
         </div>
 
-        <div id="typing-indicator" style="position:fixed; bottom:90px; left:20px; font-size:0.75rem; color:#FFD700; opacity:0; transition:opacity 0.3s;">Seseorang mengetik...</div>
+        <div id="typing-indicator">Seseorang sedang mengetik...</div>
 
         <div class="footer-container">
             
             <div id="reply-preview-bar">
-                <div>
-                    <div style="color:#FFD700; font-size:0.7rem; margin-bottom:2px;">Membalas ke <span id="reply-to-user">...</span></div>
-                    <div id="reply-preview-text">Isi pesan...</div>
+                <div style="flex:1; overflow:hidden;">
+                    <div style="color:#FFD700; font-size:0.7rem; margin-bottom:2px;">Membalas <b id="reply-to-user">...</b></div>
+                    <div id="reply-preview-text">...</div>
                 </div>
                 <div class="close-prev" onclick="cancelReply()">✕</div>
             </div>
 
             <div id="vn-preview-bar">
-                <audio id="vn-player" controls style="flex:1; height:30px;"></audio>
-                <button class="icon-btn" onclick="sendVoiceNote()" style="color:#00ff00;">✔</button>
-                <button class="icon-btn" onclick="cancelVoiceNote()" style="color:#ff4444;">✖</button>
+                <audio id="vn-player" controls></audio>
+                <div class="vn-actions">
+                    <button onclick="sendVoiceNote()" class="btn-circle green">✔</button>
+                    <button onclick="cancelVoiceNote()" class="btn-circle red">✕</button>
+                </div>
             </div>
 
             <div class="input-area" id="main-input-area">
@@ -90,14 +107,14 @@
                 <input type="file" id="file-input" accept="image/*" onchange="handleImageUpload(this)">
 
                 <div class="input-wrapper">
-                    <input type="text" id="msg-input" placeholder="Ketik pesan..." onkeypress="handleEnter(event)" oninput="handleTyping()">
+                    <textarea id="msg-input" rows="1" placeholder="Ketik pesan..." onkeydown="handleEnter(event)" oninput="handleTyping()"></textarea>
                 </div>
 
                 <button class="icon-btn" id="mic-btn" onclick="toggleRecording()">
                     <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
                 </button>
 
-                <button id="send-btn" class="icon-btn" onclick="sendMessage()">
+                <button id="send-btn" onclick="sendMessage()">
                     <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
                 </button>
             </div>
