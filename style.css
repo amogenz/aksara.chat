@@ -9,10 +9,10 @@ body {
     color: #E0E0E0; height: 100dvh; overflow: hidden; 
 }
 
-div, button, input, textarea { transition: all 0.15s ease-out; } /* Dipercepat jadi 0.15s */
+div, button, input, textarea { transition: all 0.15s ease-out; }
 #file-input { display: none !important; }
 
-/* --- LOGIN --- */
+/* --- LOGIN SCREEN --- */
 #login-screen { 
     display: flex; height: 100%; flex-direction: column; 
     position: absolute; top: 0; left: 0; width: 100%; z-index: 999; background: #121212;
@@ -21,7 +21,7 @@ div, button, input, textarea { transition: all 0.15s ease-out; } /* Dipercepat j
 .login-box { 
     background: #1e1e1e; padding: 30px; border-radius: 20px; 
     width: 100%; max-width: 320px; text-align: center; 
-    border: 1px solid #333; box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    border: 1px solid #333; box-shadow: 0 15px 35px rgba(0,0,0,0.5);
 }
 .login-box h2 { margin:0 0 5px 0; color: #FFD700; }
 .login-box input { 
@@ -36,7 +36,7 @@ div, button, input, textarea { transition: all 0.15s ease-out; } /* Dipercepat j
     font-weight: 800; margin-top: 15px; letter-spacing: 1px;
 }
 
-/* --- BRANDING --- */
+/* --- BRANDING (FIXED & BESAR) --- */
 .branding-footer {
     position: absolute; bottom: 30px; left: 0; right: 0;
     display: flex; flex-direction: column; align-items: center; gap: 5px; 
@@ -45,51 +45,49 @@ div, button, input, textarea { transition: all 0.15s ease-out; } /* Dipercepat j
 .branding-text { color: #666; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
 .branding-logo { width: 90px; height: auto; object-fit: contain; filter: grayscale(100%) brightness(200%); opacity: 0.9; }
 @media screen and (max-height: 500px) {
-    .branding-footer { display: none !important; }
+    .branding-footer { display: none !important; visibility: hidden; }
     .login-content { align-items: flex-start; padding-top: 20px; }
 }
 
-/* --- SIDEBAR (SUPER LITE) --- */
+/* --- SIDEBAR (FAST UI) --- */
 #sidebar-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.8); z-index: 998; display: none;
 }
 #sidebar {
     position: fixed; top: 0; left: -280px; width: 280px; height: 100%;
-    background: #151515; z-index: 999; transition: left 0.2s ease-out; /* Animasi cepat */
+    background: #151515; z-index: 999; transition: left 0.25s ease-out;
     border-right: 1px solid #333; padding: 20px; display: flex; flex-direction: column;
 }
 #sidebar.active { left: 0; }
 .sidebar-header { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #333; }
 .setting-block { margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; }
 .setting-label { display: block; color: #888; font-size: 0.8rem; margin-bottom: 5px; }
-.permission-btn { width: 100%; padding: 10px; background: #252525; border: 1px solid #444; color: white; border-radius: 6px; cursor: pointer; margin-top: 5px; text-align: left; font-size: 0.85rem; }
+.permission-btn { width: 100%; padding: 12px; background: #252525; border: 1px solid #444; color: white; border-radius: 6px; cursor: pointer; margin-top: 5px; text-align: left; font-size: 0.85rem; }
 .reset-btn { width: 100%; padding: 5px; background: none; border: none; color: #ff5555; font-size: 0.75rem; cursor: pointer; margin-top: 5px; text-align: right; }
 .sidebar-btn { color: #ff5555; border-color: #553333; text-align: center; background: #252525; padding: 12px; border: 1px solid #444; border-radius: 6px; cursor: pointer; width: 100%; margin-top: auto; }
 
 /* --- HEADER --- */
 header { 
-    background: #121212; /* Solid color = performance */
+    background: #121212; /* Solid Performance */
     padding: 0 15px; display: flex; align-items: center; justify-content: space-between;
     position: fixed; top: 0; left: 0; width: 100%; z-index: 50;
-    height: 65px; border-bottom: 1px solid #222;
+    height: 65px; border-bottom: 1px solid #222; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
 }
 #chat-screen { display: none; flex-direction: column; height: 100%; width: 100%; }
 .header-left { display: flex; align-items: center; gap: 12px; width: 100%; }
 .header-logo { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #FFD700; }
 .header-text-container { display: flex; flex-direction: column; justify-content: center; }
-.title-row { display: flex; align-items: center; gap: 8px; }
 .header-title-text { font-size: 17px; font-weight: 700; color: #E0E0E0; }
-
 #typing-indicator { font-size: 0.75rem; color: #888; font-style: italic; margin-top: 1px; font-weight: 500; }
 .hamburger-icon { display: flex; flex-direction: column; gap: 5px; width: 26px; cursor: pointer; padding: 5px; }
 .hamburger-icon span { display: block; width: 100%; height: 2px; background: #FFD700; border-radius: 2px; }
 
-/* --- MESSAGES --- */
+/* --- MESSAGES (BUBBLE FIX) --- */
 #messages { 
     flex: 1; overflow-y: auto; padding: 15px; 
-    padding-top: 80px; padding-bottom: 85px; 
-    display: flex; flex-direction: column; gap: 8px;
+    padding-top: 80px; padding-bottom: 90px; 
+    display: flex; flex-direction: column; gap: 4px; /* Jarak rapat */
 }
 .welcome-msg { 
     text-align: center; color: #888; font-size: 0.75rem; 
@@ -97,34 +95,57 @@ header {
     border-radius: 20px; margin: 15px 0; 
 }
 
+/* BUBBLE CHAT */
 .message { 
-    max-width: 85%; width: fit-content; min-width: 70px;
-    padding: 8px 10px 8px 12px; font-size: 0.95rem; 
-    position: relative; display: flex; flex-direction: column;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.2); /* Ringan */
-    white-space: pre-wrap; word-wrap: break-word;
+    max-width: 75%; 
+    width: fit-content; /* Ramping sesuai teks */
+    min-width: 80px;
+    padding: 6px 10px; 
+    font-size: 0.95rem; 
+    position: relative; 
+    display: flex; flex-direction: column;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    margin-bottom: 2px;
 }
-.message.left { align-self: flex-start; background: #222; color: #fff; border-radius: 16px 16px 16px 2px; }
-.message.right { align-self: flex-end; background: #FFD700; color: #000; border-radius: 16px 16px 2px 16px; }
-.sender-name { font-size: 0.7rem; font-weight: 800; color: #FFD700; margin-bottom: 2px; }
-.message.right .sender-name { display: none; }
+
+.message.left { 
+    align-self: flex-start; background: #222; color: #fff; 
+    border-radius: 12px 12px 12px 0px; margin-left: 5px;
+}
+.message.right { 
+    align-self: flex-end; background: #FFD700; color: #000; 
+    border-radius: 12px 12px 0px 12px; margin-right: 5px;
+}
+
+.sender-name { 
+    font-size: 0.75rem; font-weight: 700; margin-bottom: 2px; display: block; 
+}
+.message.left .sender-name { color: #FFD700; }
+.message.right .sender-name { color: #444; font-size: 0.65rem; text-align: right; }
+
+.msg-content { word-wrap: break-word; white-space: pre-wrap; line-height: 1.3; }
+
+.time-info { 
+    float: right; font-size: 0.65rem; margin-top: 4px; margin-left: 10px; 
+    position: relative; top: 3px; opacity: 0.7;
+}
+.message.right .time-info { color: #000; font-weight: 600; }
+.message.left .time-info { color: #ccc; }
 
 .reply-quote {
-    background: rgba(0,0,0,0.1); border-left: 3px solid;
-    padding: 4px 8px; border-radius: 6px; 
-    font-size: 0.75rem; margin-bottom: 4px; opacity: 0.85;
-    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    background: rgba(0,0,0,0.15); border-left: 3px solid;
+    padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; margin-bottom: 4px;
 }
-.message.left .reply-quote { border-color: #FFD700; }
-.message.right .reply-quote { border-color: #333; }
+.message.left .reply-quote { border-color: #FFD700; color: #ccc; }
+.message.right .reply-quote { border-color: #333; color: #333; }
 
-audio { height: 32px; max-width: 220px; margin-top: 4px; border-radius: 20px; filter: invert(1) hue-rotate(180deg) contrast(0.8); outline: none; }
-.message.right audio { filter: none; mix-blend-mode: multiply; opacity: 0.85; }
-.chat-image { width: 100%; border-radius: 10px; margin-top: 4px; max-width: 260px; object-fit: cover; }
+audio { height: 30px; max-width: 200px; margin-top: 4px; border-radius: 20px; filter: invert(1) hue-rotate(180deg) contrast(0.8); outline: none; }
+.message.right audio { filter: none; mix-blend-mode: multiply; opacity: 0.8; }
+.chat-image { width: 100%; border-radius: 8px; margin-top: 4px; max-width: 240px; object-fit: cover; }
 
 /* --- FOOTER --- */
 .footer-container {
-    position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
+    position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
     width: 96%; max-width: 600px; z-index: 50;
     display: flex; flex-direction: column; gap: 6px;
 }
@@ -136,7 +157,7 @@ audio { height: 32px; max-width: 220px; margin-top: 4px; border-radius: 20px; fi
 .input-area { 
     background: #1e1e1e; padding: 6px 8px; border-radius: 26px;
     display: flex; align-items: flex-end; gap: 6px; 
-    border: 1px solid #333;
+    border: 1px solid #333; box-shadow: 0 5px 20px rgba(0,0,0,0.4);
 }
 .input-area:focus-within { border-color: #555; }
 
