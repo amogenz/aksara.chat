@@ -3,32 +3,16 @@
 
 body { 
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    margin: 0; background-color: #0f0f0f;
+    margin: 0; 
+    background-color: #0f0f0f;
     background-image: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #000000 100%);
     background-size: cover; background-position: center; background-attachment: fixed;
-    color: #E0E0E0; height: 100dvh; overflow: hidden; 
+    color: #E0E0E0; 
+    height: 100dvh; 
+    overflow: hidden; 
 }
 
 div, button, input, textarea { transition: all 0.2s ease-in-out; }
-
-/* --- POPUP NOTIF --- */
-#notif-popup {
-    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.8); z-index: 2000;
-    align-items: center; justify-content: center; backdrop-filter: blur(5px);
-}
-.notif-box {
-    background: #1E1E1E; padding: 25px; border-radius: 20px;
-    width: 85%; max-width: 320px; text-align: center;
-    border: 1px solid #FFD700; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    animation: popIn 0.3s;
-}
-@keyframes popIn { from {transform: scale(0.8); opacity:0;} to {transform: scale(1); opacity:1;} }
-.notif-box h3 { margin: 10px 0; color: #FFD700; }
-.notif-box p { color: #ccc; font-size: 0.9rem; margin-bottom: 20px; line-height: 1.4; }
-.notif-buttons { display: flex; gap: 10px; justify-content: center; }
-.btn-allow { flex:1; padding: 10px; background: #FFD700; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; }
-.btn-later { flex:1; padding: 10px; background: transparent; border: 1px solid #444; border-radius: 8px; color: #888; cursor: pointer; }
 
 #file-input { display: none !important; }
 
@@ -39,7 +23,6 @@ div, button, input, textarea { transition: all 0.2s ease-in-out; }
     background: #121212;
 }
 
-/* Wrapper Konten Tengah */
 .login-content {
     flex: 1; display: flex; align-items: center; justify-content: center;
     width: 100%; padding: 20px;
@@ -65,36 +48,24 @@ div, button, input, textarea { transition: all 0.2s ease-in-out; }
 }
 .btn-start:active { transform: scale(0.98); }
 
-/* --- BRANDING FOOTER (FIX KEYBOARD ISSUE) --- */
+/* --- BRANDING FOOTER --- */
 .branding-footer {
-    position: absolute; 
-    bottom: 30px; 
-    left: 0; right: 0;
-    display: flex; flex-direction: column; 
-    align-items: center; gap: 5px; 
-    z-index: 1000;
-    pointer-events: none; /* Biar gak ngehalangin klik kalau ada error */
+    position: absolute; bottom: 30px; left: 0; right: 0;
+    display: flex; flex-direction: column; align-items: center; gap: 5px; 
+    z-index: 1000; pointer-events: none;
 }
 .branding-text {
     color: #666; font-size: 0.85rem; text-transform: uppercase;
     letter-spacing: 1px; font-weight: 600;
 }
 .branding-logo {
-    width: 110px; /* Lebih besar lagi */
-    height: auto; object-fit: contain; 
+    width: 90px; height: auto; object-fit: contain; 
     filter: grayscale(100%) brightness(200%); opacity: 0.9;
 }
 
-/* --- MEDIA QUERY PENTING: Sembunyikan Logo saat Keyboard Muncul (Layar Pendek) --- */
 @media screen and (max-height: 500px) {
-    .branding-footer {
-        display: none !important;
-        visibility: hidden;
-    }
-    .login-content {
-        align-items: flex-start; /* Geser box ke atas biar gak ketutup keyboard */
-        padding-top: 20px;
-    }
+    .branding-footer { display: none !important; visibility: hidden; }
+    .login-content { align-items: flex-start; padding-top: 20px; }
 }
 
 /* --- SIDEBAR --- */
@@ -115,16 +86,13 @@ div, button, input, textarea { transition: all 0.2s ease-in-out; }
 .permission-btn { width: 100%; padding: 10px; background: #252525; border: 1px solid #444; color: white; border-radius: 6px; cursor: pointer; margin-top: 5px; text-align: left; font-size: 0.85rem; }
 .reset-btn { width: 100%; padding: 5px; background: none; border: none; color: #ff5555; font-size: 0.75rem; cursor: pointer; margin-top: 5px; text-align: right; }
 
-.sidebar-video-container {
-    margin-top: auto; margin-bottom: 10px; width: 100%; border-radius: 12px;
-    overflow: hidden; border: 1px solid #FFD700; box-shadow: 0 4px 15px rgba(0,0,0,0.5); background: #000;
+.sidebar-btn { 
+    color: #ff5555; border-color: #553333; text-align: center; 
+    background: #252525; padding: 12px; border: 1px solid #444; 
+    border-radius: 6px; cursor: pointer; width: 100%; margin-top: auto;
 }
-#sidebar-video { width: 100%; display: block; height: auto; }
-.sidebar-btn { color: #ff5555; border-color: #553333; text-align: center; background: #252525; padding: 12px; border: 1px solid #444; border-radius: 6px; cursor: pointer; width: 100%; }
 
 /* --- CHAT HEADER --- */
-#chat-screen { display: none; flex-direction: column; height: 100%; width: 100%; }
-
 header { 
     background: rgba(18, 18, 18, 0.95); backdrop-filter: blur(12px);
     padding: 0 15px; display: flex; align-items: center; justify-content: space-between;
@@ -132,8 +100,10 @@ header {
     height: 65px; border-bottom: 1px solid rgba(255,255,255,0.08);
     box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 }
+#chat-screen { display: none; flex-direction: column; height: 100%; width: 100%; }
 .header-left { display: flex; align-items: center; gap: 12px; width: 100%; }
 .header-logo { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #FFD700; }
+
 .header-text-container { display: flex; flex-direction: column; justify-content: center; }
 .title-row { display: flex; align-items: center; }
 .header-title-text { font-size: 17px; font-weight: 700; color: #E0E0E0; letter-spacing: 0.5px; }
@@ -152,72 +122,36 @@ header {
     padding-top: 80px; padding-bottom: 85px; 
     display: flex; flex-direction: column; gap: 8px;
 }
-
 .welcome-msg { 
     text-align: center; color: #888; font-size: 0.75rem; 
     background: rgba(30,30,30,0.5); align-self: center; padding: 6px 16px; 
     border-radius: 20px; margin: 15px 0; 
 }
 
-/* FIX BUBBLE CHAT */
 .message { 
-    max-width: 85%; 
-    width: fit-content; 
-    min-width: 70px;
-    padding: 8px 10px 8px 12px; 
-    font-size: 0.95rem; 
-    position: relative; 
-    display: flex; 
-    flex-direction: column; /* Tetap column agar rapi */
+    max-width: 85%; width: fit-content; min-width: 70px;
+    padding: 8px 10px 8px 12px; font-size: 0.95rem; 
+    position: relative; display: flex; flex-direction: column;
     box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-    white-space: pre-wrap; 
-    word-wrap: break-word;
+    white-space: pre-wrap; word-wrap: break-word;
     animation: smoothPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-
 @keyframes smoothPop { from { opacity: 0; transform: scale(0.8) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 
-.message.left { 
-    align-self: flex-start; background: #222; color: #fff; 
-    border-radius: 16px 16px 16px 2px; 
-}
-.message.right { 
-    align-self: flex-end; background: #FFD700; color: #000; 
-    border-radius: 16px 16px 2px 16px; 
-}
-
+.message.left { align-self: flex-start; background: #222; color: #fff; border-radius: 16px 16px 16px 2px; }
+.message.right { align-self: flex-end; background: #FFD700; color: #000; border-radius: 16px 16px 2px 16px; }
 .sender-name { font-size: 0.7rem; font-weight: 800; color: #FFD700; margin-bottom: 2px; }
 .message.right .sender-name { display: none; }
 
-/* REPLY FIX - Batasi ukuran */
+/* REPLY STYLE */
 .reply-quote {
-    background: rgba(0,0,0,0.1); 
-    border-left: 3px solid;
-    padding: 4px 8px; 
-    border-radius: 6px; 
-    font-size: 0.75rem; 
-    margin-bottom: 4px; 
-    opacity: 0.85;
-    max-width: 100%; /* PENTING: Jangan melebar */
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap; /* Potong teks reply panjang */
+    background: rgba(0,0,0,0.1); border-left: 3px solid;
+    padding: 4px 8px; border-radius: 6px; 
+    font-size: 0.75rem; margin-bottom: 4px; opacity: 0.85;
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .message.left .reply-quote { border-color: #FFD700; }
 .message.right .reply-quote { border-color: #333; }
-
-/* TIMESTAMP FIX - Float Right (Pojok Kanan Bawah) */
-.time-info { 
-    font-size: 0.65rem; 
-    opacity: 0.6; 
-    float: right;      /* Mengapung ke kanan */
-    margin-top: 4px;   
-    margin-left: 8px;  
-    margin-right: -4px; /* Sedikit geser ke pojok */
-    line-height: 1; 
-    vertical-align: bottom;
-}
-.message.right .time-info { color: #000; font-weight: 600; opacity: 0.6; }
 
 audio { height: 32px; max-width: 220px; margin-top: 4px; border-radius: 20px; filter: invert(1) hue-rotate(180deg) contrast(0.8); outline: none; }
 .message.right audio { filter: none; mix-blend-mode: multiply; opacity: 0.85; }
