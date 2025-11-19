@@ -3,13 +3,10 @@
 
 body { 
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    margin: 0; 
-    background-color: #0f0f0f;
+    margin: 0; background-color: #0f0f0f;
     background-image: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #000000 100%);
     background-size: cover; background-position: center; background-attachment: fixed;
-    color: #E0E0E0; 
-    height: 100dvh; /* Full viewport height mobile friendly */
-    overflow: hidden; 
+    color: #E0E0E0; height: 100dvh; overflow: hidden; 
 }
 
 div, button, input, textarea { transition: all 0.2s ease-in-out; }
@@ -24,7 +21,7 @@ div, button, input, textarea { transition: all 0.2s ease-in-out; }
     background: #1E1E1E; padding: 25px; border-radius: 20px;
     width: 85%; max-width: 320px; text-align: center;
     border: 1px solid #FFD700; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: popIn 0.3s;
 }
 @keyframes popIn { from {transform: scale(0.8); opacity:0;} to {transform: scale(1); opacity:1;} }
 .notif-box h3 { margin: 10px 0; color: #FFD700; }
@@ -37,16 +34,22 @@ div, button, input, textarea { transition: all 0.2s ease-in-out; }
 
 /* --- LOGIN SCREEN --- */
 #login-screen { 
-    display: flex; height: 100%; align-items: center; justify-content: center; 
-    flex-direction: column; background: #121212; padding: 20px; 
+    display: flex; height: 100%; flex-direction: column; 
     position: absolute; top: 0; left: 0; width: 100%; z-index: 999;
+    background: #121212;
 }
+
+/* Wrapper Konten Tengah */
+.login-content {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    width: 100%; padding: 20px;
+}
+
 .login-box { 
     background: rgba(30,30,30,0.9); padding: 30px; border-radius: 20px; 
     width: 100%; max-width: 320px; text-align: center; 
     border: 1px solid #333; backdrop-filter: blur(10px);
     box-shadow: 0 15px 35px rgba(0,0,0,0.5);
-    transform: translateY(-40px); /* Geser naik dikit biar gak tabrakan sama logo */
 }
 .login-box h2 { margin:0 0 5px 0; color: #FFD700; }
 .login-box input { 
@@ -62,31 +65,36 @@ div, button, input, textarea { transition: all 0.2s ease-in-out; }
 }
 .btn-start:active { transform: scale(0.98); }
 
-/* --- BRANDING FOOTER (FIXED BOTTOM) --- */
+/* --- BRANDING FOOTER (FIX KEYBOARD ISSUE) --- */
 .branding-footer {
-    position: fixed; 
-    bottom: 30px; /* Jarak aman dari bawah */
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    flex-direction: column; 
-    align-items: center; 
-    gap: 5px; 
+    position: absolute; 
+    bottom: 30px; 
+    left: 0; right: 0;
+    display: flex; flex-direction: column; 
+    align-items: center; gap: 5px; 
     z-index: 1000;
+    pointer-events: none; /* Biar gak ngehalangin klik kalau ada error */
 }
 .branding-text {
-    color: #666; /* Abu-abu gelap */
-    font-size: 0.85rem; /* Ukuran tetap */
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-weight: 600;
+    color: #666; font-size: 0.85rem; text-transform: uppercase;
+    letter-spacing: 1px; font-weight: 600;
 }
 .branding-logo {
-    width: 90px; /* DIPERBESAR LAGI */
-    height: auto;
-    object-fit: contain; 
-    filter: grayscale(100%) brightness(200%); /* Putih terang */
-    opacity: 0.9;
+    width: 110px; /* Lebih besar lagi */
+    height: auto; object-fit: contain; 
+    filter: grayscale(100%) brightness(200%); opacity: 0.9;
+}
+
+/* --- MEDIA QUERY PENTING: Sembunyikan Logo saat Keyboard Muncul (Layar Pendek) --- */
+@media screen and (max-height: 500px) {
+    .branding-footer {
+        display: none !important;
+        visibility: hidden;
+    }
+    .login-content {
+        align-items: flex-start; /* Geser box ke atas biar gak ketutup keyboard */
+        padding-top: 20px;
+    }
 }
 
 /* --- SIDEBAR --- */
@@ -114,7 +122,7 @@ div, button, input, textarea { transition: all 0.2s ease-in-out; }
 #sidebar-video { width: 100%; display: block; height: auto; }
 .sidebar-btn { color: #ff5555; border-color: #553333; text-align: center; background: #252525; padding: 12px; border: 1px solid #444; border-radius: 6px; cursor: pointer; width: 100%; }
 
-/* --- CHAT HEADER (FIXED) --- */
+/* --- CHAT HEADER --- */
 #chat-screen { display: none; flex-direction: column; height: 100%; width: 100%; }
 
 header { 
@@ -126,20 +134,15 @@ header {
 }
 .header-left { display: flex; align-items: center; gap: 12px; width: 100%; }
 .header-logo { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #FFD700; }
-
 .header-text-container { display: flex; flex-direction: column; justify-content: center; }
 .title-row { display: flex; align-items: center; }
 .header-title-text { font-size: 17px; font-weight: 700; color: #E0E0E0; letter-spacing: 0.5px; }
 .room-badge { background: rgba(255, 215, 0, 0.1); color: #FFD700; padding: 1px 6px; border-radius: 4px; font-size: 0.75rem; margin-left: 6px; }
-
-/* TYPING INDICATOR */
 #typing-indicator {
     font-size: 0.75rem; color: #888; font-style: italic; 
     height: 16px; line-height: 16px; overflow: hidden;
-    transition: color 0.3s; margin-top: 1px;
-    font-weight: 500; /* Biar "from Amogenz" agak tebal */
+    transition: color 0.3s; margin-top: 1px; font-weight: 500;
 }
-
 .hamburger-icon { display: flex; flex-direction: column; gap: 5px; width: 26px; cursor: pointer; padding: 5px; }
 .hamburger-icon span { display: block; width: 100%; height: 2px; background: #FFD700; border-radius: 2px; }
 
@@ -147,7 +150,7 @@ header {
 #messages { 
     flex: 1; overflow-y: auto; padding: 15px; 
     padding-top: 80px; padding-bottom: 85px; 
-    display: flex; flex-direction: column; gap: 6px;
+    display: flex; flex-direction: column; gap: 8px;
 }
 
 .welcome-msg { 
@@ -156,14 +159,22 @@ header {
     border-radius: 20px; margin: 15px 0; 
 }
 
+/* FIX BUBBLE CHAT */
 .message { 
-    max-width: 82%; width: fit-content; min-width: 60px;
-    padding: 8px 12px; font-size: 0.95rem; 
-    position: relative; display: flex; flex-direction: column;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.25);
-    white-space: pre-wrap; word-wrap: break-word;
+    max-width: 85%; 
+    width: fit-content; 
+    min-width: 70px;
+    padding: 8px 10px 8px 12px; 
+    font-size: 0.95rem; 
+    position: relative; 
+    display: flex; 
+    flex-direction: column; /* Tetap column agar rapi */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    white-space: pre-wrap; 
+    word-wrap: break-word;
     animation: smoothPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+
 @keyframes smoothPop { from { opacity: 0; transform: scale(0.8) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 
 .message.left { 
@@ -177,8 +188,36 @@ header {
 
 .sender-name { font-size: 0.7rem; font-weight: 800; color: #FFD700; margin-bottom: 2px; }
 .message.right .sender-name { display: none; }
-.time-info { font-size: 0.65rem; margin-top: 2px; align-self: flex-end; opacity: 0.6; margin-left: 10px; line-height:1; }
-.message.right .time-info { color: #000; font-weight: 600; opacity: 0.7; }
+
+/* REPLY FIX - Batasi ukuran */
+.reply-quote {
+    background: rgba(0,0,0,0.1); 
+    border-left: 3px solid;
+    padding: 4px 8px; 
+    border-radius: 6px; 
+    font-size: 0.75rem; 
+    margin-bottom: 4px; 
+    opacity: 0.85;
+    max-width: 100%; /* PENTING: Jangan melebar */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap; /* Potong teks reply panjang */
+}
+.message.left .reply-quote { border-color: #FFD700; }
+.message.right .reply-quote { border-color: #333; }
+
+/* TIMESTAMP FIX - Float Right (Pojok Kanan Bawah) */
+.time-info { 
+    font-size: 0.65rem; 
+    opacity: 0.6; 
+    float: right;      /* Mengapung ke kanan */
+    margin-top: 4px;   
+    margin-left: 8px;  
+    margin-right: -4px; /* Sedikit geser ke pojok */
+    line-height: 1; 
+    vertical-align: bottom;
+}
+.message.right .time-info { color: #000; font-weight: 600; opacity: 0.6; }
 
 audio { height: 32px; max-width: 220px; margin-top: 4px; border-radius: 20px; filter: invert(1) hue-rotate(180deg) contrast(0.8); outline: none; }
 .message.right audio { filter: none; mix-blend-mode: multiply; opacity: 0.85; }
