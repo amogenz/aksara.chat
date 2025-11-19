@@ -1,3 +1,4 @@
+
 let client;
 let myName = "";
 let myRoom = "";
@@ -10,6 +11,7 @@ let typingTimeout;
 
 const notifAudio = document.getElementById('notifSound');
 
+// --- INIT ---
 window.onload = function() {
     if(localStorage.getItem('aksara_name')) document.getElementById('username').value = localStorage.getItem('aksara_name');
     if(localStorage.getItem('aksara_room')) document.getElementById('room').value = localStorage.getItem('aksara_room');
@@ -26,6 +28,7 @@ window.onload = function() {
     if(savedBg) document.body.style.backgroundImage = `url(${savedBg})`;
 };
 
+// --- NOTIFIKASI ---
 function enableNotif() {
     Notification.requestPermission().then(permission => {
         closeNotifPopup();
@@ -54,6 +57,7 @@ function sendSystemNotification(user, text) {
     }
 }
 
+// --- SIDEBAR & VIDEO ---
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
@@ -69,6 +73,7 @@ function toggleSidebar() {
     }
 }
 
+// --- CORE APP LOGIC ---
 function startChat() {
     const user = document.getElementById('username').value.trim();
     const room = document.getElementById('room').value.trim().toLowerCase();
@@ -77,12 +82,15 @@ function startChat() {
     localStorage.setItem('aksara_name', user);
     localStorage.setItem('aksara_room', room);
     myName = user;
-    myRoom = "aksara-v12/" + room;
+    myRoom = "aksara-v13/" + room;
 
     document.getElementById('side-user').innerText = myName;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('chat-screen').style.display = 'flex';
     document.getElementById('room-display').innerText = "#" + room;
+    
+    // SET DEFAULT TEXT
+    document.getElementById('typing-indicator').innerText = "from Amogenz";
 
     checkNotifPermission();
     loadChatHistory();
@@ -109,7 +117,28 @@ function startChat() {
     });
 }
 
-// ... (Sisa fungsi sama, lanjutkan dari sini) ...
+// --- TYPING INDICATOR LOGIC ---
+function handleTyping() {
+    const el = document.getElementById('msg-input');
+    el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px';
+    client.publish(myRoom, JSON.stringify({ type: 'typing', user: myName }));
+}
+
+function showTyping(user) {
+    if (user === myName) return;
+    const ind = document.getElementById('typing-indicator');
+    ind.innerText = `${user} mengetik...`; 
+    ind.style.color = "#FFD700"; // Warna kuning saat ngetik
+    
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => { 
+        // Balik ke default saat berhenti ngetik
+        ind.innerText = "from Amogenz"; 
+        ind.style.color = "#888"; // Balik ke abu-abu
+    }, 2000);
+}
+
+// --- UTILS & HELPERS ---
 function handleBackgroundUpload(input) {
     const file = input.files[0];
     if(file) {
@@ -119,7 +148,7 @@ function handleBackgroundUpload(input) {
                 localStorage.setItem('aksara_bg_image', e.target.result);
                 document.body.style.backgroundImage = `url(${e.target.result})`;
                 alert("Background diganti!");
-            } catch (err) { alert("Gambar kebesaran!"); }
+            } catch (err) { alert("Gambar kebesaran! (Max 2MB)"); }
         }
         reader.readAsDataURL(file);
     }
@@ -129,6 +158,7 @@ function resetBackground() {
     document.body.style.backgroundImage = "";
     alert("Background dihapus.");
 }
+
 function getStorageKey() { return 'aksara_chat_history_' + myRoom; }
 function saveMessageToHistory(msgData) {
     msgData.timestamp = Date.now(); 
@@ -149,6 +179,7 @@ function loadChatHistory() {
     freshHistory.forEach(data => displayMessage(data, false));
 }
 function clearChatHistory() { localStorage.removeItem(getStorageKey()); }
+
 function toggleSound() {
     isSoundOn = document.getElementById('sound-toggle').checked;
     localStorage.setItem('aksara_sound', isSoundOn);
@@ -176,6 +207,7 @@ function renderOnlineList() {
     }
     count.innerText = total;
 }
+
 function publishMessage(content, type = 'text') {
     if (!content) return;
     const now = new Date();
@@ -184,6 +216,7 @@ function publishMessage(content, type = 'text') {
     client.publish(myRoom, JSON.stringify(payload));
     cancelReply();
 }
+
 function sendMessage() {
     const input = document.getElementById('msg-input');
     const text = input.value.trim();
@@ -193,6 +226,7 @@ function sendMessage() {
     }
 }
 function handleEnter(e) { if (e.key === 'Enter' && !e.shiftKey && sendOnEnter) { e.preventDefault(); sendMessage(); } }
+
 function setReply(user, text) {
     replyingTo = { user: user, text: text };
     document.getElementById('reply-preview-bar').style.display = 'flex';
@@ -201,6 +235,7 @@ function setReply(user, text) {
     document.getElementById('msg-input').focus();
 }
 function cancelReply() { replyingTo = null; document.getElementById('reply-preview-bar').style.display = 'none'; }
+
 async function toggleRecording() {
     const micBtn = document.getElementById('mic-btn');
     if (!isRecording) {
@@ -225,6 +260,7 @@ function sendVoiceNote() {
     reader.onloadend = () => { publishMessage(reader.result, 'audio'); cancelVoiceNote(); };
 }
 function cancelVoiceNote() { audioBlobData = null; document.getElementById('vn-preview-bar').style.display = 'none'; document.getElementById('main-input-area').style.display = 'flex'; }
+
 function handleImageUpload(input) {
     const file = input.files[0];
     if (file) {
@@ -244,18 +280,7 @@ function handleImageUpload(input) {
     }
     input.value = "";
 }
-function handleTyping() {
-    const el = document.getElementById('msg-input');
-    el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px';
-    client.publish(myRoom, JSON.stringify({ type: 'typing', user: myName }));
-}
-function showTyping(user) {
-    if (user === myName) return;
-    const ind = document.getElementById('typing-indicator');
-    ind.innerText = `${user} mengetik...`; ind.style.color = "#FFD700";
-    clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => { ind.innerText = ""; ind.style.color = "#aaa"; }, 2000);
-}
+
 function displayMessage(data, saveToStorage = false) {
     const chatBox = document.getElementById('messages');
     const div = document.createElement('div');
