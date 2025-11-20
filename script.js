@@ -1,38 +1,33 @@
 let client;
 let myName = "";
 let myRoom = "";
+let storageTopic = ""; 
 let mediaRecorder, audioChunks = [], isRecording = false, audioBlobData = null;
 let isSoundOn = true;
 let sendOnEnter = true;
 let replyingTo = null;
 let onlineUsers = {};
 let typingTimeout;
+let localChatHistory = []; // Penampung data lokal
 
 const notifAudio = document.getElementById('notifSound');
 
 window.onload = function() {
+    // Load Settings
     if(localStorage.getItem('aksara_name')) document.getElementById('username').value = localStorage.getItem('aksara_name');
     if(localStorage.getItem('aksara_room')) document.getElementById('room').value = localStorage.getItem('aksara_room');
-    
-    if(localStorage.getItem('aksara_sound')) {
-        isSoundOn = (localStorage.getItem('aksara_sound') === 'true');
-        document.getElementById('sound-toggle').checked = isSoundOn;
-    }
-    if(localStorage.getItem('aksara_enter')) {
-        sendOnEnter = (localStorage.getItem('aksara_enter') === 'true');
-        document.getElementById('enter-toggle').checked = sendOnEnter;
-    }
+    if(localStorage.getItem('aksara_sound')) document.getElementById('sound-toggle').checked = (localStorage.getItem('aksara_sound') === 'true');
+    if(localStorage.getItem('aksara_enter')) document.getElementById('enter-toggle').checked = (localStorage.getItem('aksara_enter') === 'true');
     const savedBg = localStorage.getItem('aksara_bg_image');
     if(savedBg) document.body.style.backgroundImage = `url(${savedBg})`;
 };
 
+// --- NOTIFIKASI ---
 function enableNotif() {
-    Notification.requestPermission().then(permission => {
-        if (permission === "granted") alert("Notifikasi Aktif!");
-        else alert("Ditolak browser.");
+    Notification.requestPermission().then(p => {
+        if (p === "granted") alert("Notifikasi Aktif!"); else alert("Ditolak browser.");
     });
 }
-
 function sendSystemNotification(user, text) {
     if (document.visibilityState === "hidden" && Notification.permission === "granted") {
         const notif = new Notification(`Aksara: ${user}`, { body: text, icon: "https://i.imgur.com/Ct0pzwl.png" });
@@ -43,10 +38,12 @@ function sendSystemNotification(user, text) {
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
-    if (sidebar.style.left === '0px') { sidebar.style.left = '-280px'; overlay.style.display = 'none'; }
-    else { sidebar.style.left = '0px'; overlay.style.display = 'block'; }
+    const isActive = sidebar.style.left === '0px';
+    sidebar.style.left = isActive ? '-280px' : '0px';
+    overlay.style.display = isActive ? 'none' : 'block';
 }
 
+// --- CORE CONNECTION ---
 function startChat() {
     const user = document.getElementById('username').value.trim();
     const room = document.getElementById('room').value.trim().toLowerCase();
@@ -55,26 +52,31 @@ function startChat() {
     localStorage.setItem('aksara_name', user);
     localStorage.setItem('aksara_room', room);
     myName = user;
-    myRoom = "aksara-v19/" + room;
+    myRoom = "aksara-v21/" + room;
+    storageTopic = myRoom + "/storage"; 
 
     document.getElementById('side-user').innerText = myName;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('chat-screen').style.display = 'flex';
     
-    // --- INI BARIS YANG TADI HILANG, SEKARANG SUDAH ADA ---
+    // --- FIX: NAMA ROOM MUNCUL DISINI ---
     document.getElementById('room-display').innerText = "#" + room;
-    // -----------------------------------------------------
     
     document.getElementById('typing-indicator').innerText = "from Amogenz";
 
-    loadChatHistory();
-
-    const options = { protocol: 'wss', type: 'mqtt', clean: true, reconnectPeriod: 1000, clientId: 'aks_' + Math.random().toString(16).substr(2, 8) };
+    const options = { 
+        protocol: 'wss', type: 'mqtt', clean: true, reconnectPeriod: 1000, 
+        clientId: 'aks_' + Math.random().toString(16).substr(2, 8) 
+    };
+    
     client = mqtt.connect('wss://broker.hivemq.com:8884/mqtt', options);
 
     client.on('connect', () => {
         client.subscribe(myRoom);
+        client.subscribe(storageTopic);
+        
         publishMessage("bergabung.", 'system');
+        
         setInterval(() => {
             client.publish(myRoom, JSON.stringify({ type: 'ping', user: myName }));
             cleanOnlineList();
@@ -82,43 +84,76 @@ function startChat() {
     });
 
     client.on('message', (topic, message) => {
+        const msgString = message.toString();
+        
+        // 1. Data STORAGE (Riwayat)
+        if (topic === storageTopic) {
+            try {
+                const history = JSON.parse(msgString);
+                if (Array.isArray(history)) {
+                    localChatHistory = history;
+                    renderAllMessages();
+                }
+            } catch(e) {}
+            return;
+        }
+
+        // 2. Data REALTIME
         if (topic === myRoom) {
             try {
-                const data = JSON.parse(message.toString());
+                const data = JSON.parse(msgString);
                 if (data.type === 'ping') { updateOnlineList(data.user); return; }
                 if (data.type === 'typing') { showTyping(data.user); return; }
-                displayMessage(data, true);
+                processNewMessage(data);
             } catch (e) {}
         }
     });
 }
 
+// --- LOGIC PENYIMPANAN (LIMIT 77) ---
+function processNewMessage(data) {
+    if(data.type !== 'system') {
+        localChatHistory.push(data);
+        
+        // --- FIX: UBAH LIMIT JADI 77 ---
+        if(localChatHistory.length > 77) localChatHistory.shift();
+        
+        displayMessage(data);
+        
+        // Update Server Storage jika pesan dari kita
+        if(data.user === myName) {
+            saveHistoryToServer();
+        }
+    } else {
+        displayMessage(data);
+    }
+}
+
+function saveHistoryToServer() {
+    // Simpan Array ke Server (Retained)
+    client.publish(storageTopic, JSON.stringify(localChatHistory), { retain: true, qos: 1 });
+}
+
+function renderAllMessages() {
+    const chatBox = document.getElementById('messages');
+    chatBox.innerHTML = '<div class="welcome-msg">Riwayat chat dimuat.</div>';
+    localChatHistory.forEach(msg => displayMessage(msg));
+}
+
+
+// --- UTILS ---
 function handleBackgroundUpload(input) {
     const file = input.files[0];
     if(file) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            try { localStorage.setItem('aksara_bg_image', e.target.result); document.body.style.backgroundImage = `url(${e.target.result})`; alert("Background diganti!"); } catch (err) { alert("Gambar terlalu besar!"); }
+            localStorage.setItem('aksara_bg_image', e.target.result);
+            document.body.style.backgroundImage = `url(${e.target.result})`;
         }
         reader.readAsDataURL(file);
     }
 }
-function resetBackground() { localStorage.removeItem('aksara_bg_image'); document.body.style.backgroundImage = ""; alert("Background dihapus."); }
-function getStorageKey() { return 'aksara_chat_history_' + myRoom; }
-function saveMessageToHistory(msgData) {
-    let history = JSON.parse(localStorage.getItem(getStorageKey()) || "[]");
-    history.push(msgData);
-    if(history.length > 50) history.shift(); 
-    localStorage.setItem(getStorageKey(), JSON.stringify(history));
-}
-function loadChatHistory() {
-    const key = getStorageKey();
-    let history = JSON.parse(localStorage.getItem(key) || "[]");
-    const chatBox = document.getElementById('messages');
-    chatBox.innerHTML = '<div class="welcome-msg">Riwayat chat dimuat.</div>';
-    history.forEach(data => displayMessage(data, false));
-}
-function clearChatHistory() { localStorage.removeItem(getStorageKey()); }
+function resetBackground() { localStorage.removeItem('aksara_bg_image'); document.body.style.backgroundImage = ""; }
 function toggleSound() { isSoundOn = document.getElementById('sound-toggle').checked; localStorage.setItem('aksara_sound', isSoundOn); }
 function toggleEnterSettings() { sendOnEnter = document.getElementById('enter-toggle').checked; localStorage.setItem('aksara_enter', sendOnEnter); }
 function updateOnlineList(user) { onlineUsers[user] = Date.now(); renderOnlineList(); }
@@ -137,10 +172,18 @@ function renderOnlineList() {
 
 function publishMessage(content, type = 'text') {
     if (!content) return;
-    const payload = { user: myName, content: content, type: type, reply: replyingTo };
-    try { client.publish(myRoom, JSON.stringify(payload)); } catch (e) { alert("Koneksi error"); }
+    const now = new Date();
+    const time = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
+    
+    const payload = { 
+        user: myName, content: content, type: type, 
+        time: time, reply: replyingTo, timestamp: Date.now()
+    };
+    
+    client.publish(myRoom, JSON.stringify(payload));
     cancelReply();
 }
+
 function sendMessage() {
     const input = document.getElementById('msg-input'); const text = input.value.trim();
     if (text) { publishMessage(text, 'text'); input.value = ''; input.style.height = 'auto'; input.focus(); }
@@ -197,7 +240,7 @@ function handleImageUpload(input) {
     input.value = "";
 }
 function handleTyping() {
-    if(client && client.connected) client.publish(myRoom, JSON.stringify({ type: 'typing', user: myName }));
+    client.publish(myRoom, JSON.stringify({ type: 'typing', user: myName }));
     const el = document.getElementById('msg-input'); el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px';
 }
 function showTyping(user) {
@@ -208,19 +251,13 @@ function showTyping(user) {
     typingTimeout = setTimeout(() => { ind.innerText = "from Amogenz"; ind.style.color = "#888"; }, 2000);
 }
 
-function displayMessage(data, saveToStorage = false) {
+// --- RENDER PESAN ---
+function displayMessage(data) {
     const chatBox = document.getElementById('messages');
     const div = document.createElement('div');
     const isMe = data.user === myName;
-    const now = new Date();
-    const time = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
 
-    if(saveToStorage && data.type !== 'system') {
-        data.time = time;
-        saveMessageToHistory(data);
-    }
-
-    if (!isMe && data.type !== 'system' && saveToStorage) {
+    if (!isMe && data.type !== 'system') {
         if (isSoundOn) { notifAudio.currentTime = 0; notifAudio.play().catch(() => {}); }
         sendSystemNotification(data.user, data.type === 'text' ? data.content : 'Mengirim media');
     }
@@ -232,35 +269,31 @@ function displayMessage(data, saveToStorage = false) {
     } else {
         div.className = isMe ? 'message right' : 'message left';
         let contentHtml = "";
-        let plainText = "Media";
-        if (data.type === 'text') { contentHtml = `<span class="msg-content">${data.content}</span>`; plainText = data.content; }
+        
+        if (data.type === 'text') { contentHtml = `<span class="msg-content">${data.content}</span>`; }
         else if (data.type === 'image') contentHtml = `<img src="${data.content}" class="chat-image">`;
         else if (data.type === 'audio') contentHtml = `<audio controls src="${data.content}"></audio>`;
 
         let replyHtml = "";
         if(data.reply) {
-            replyHtml = `<div class="reply-quote"><span class="reply-sender">${data.reply.user}</span><br>${data.reply.text}</div>`;
+            replyHtml = `<div class="reply-quote"><b>${data.reply.user}</b><br>${data.reply.text}</div>`;
         }
-        const replyBtn = !isMe ? `<span onclick="setReply('${data.user}', '${plainText.replace(/'/g,"\\'")}')" style="cursor:pointer; margin-left:5px;">↩</span>` : '';
+        
+        const replyBtn = !isMe ? `<span onclick="setReply('${data.user}', 'Reply')" style="cursor:pointer; margin-left:5px;">↩</span>` : '';
 
         div.innerHTML = `
             <span class="sender-name">${data.user}</span>
             ${replyHtml}
-            <div>
-                ${contentHtml}
-                <span class="time-info">${data.time || time} ${replyBtn}</span>
-            </div>
+            <div>${contentHtml}<span class="time-info">${data.time} ${replyBtn}</span></div>
         `;
     }
     chatBox.appendChild(div);
     window.scrollTo(0, document.body.scrollHeight);
-    chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 function leaveRoom() {
-    if(confirm("Keluar & Hapus Chat?")) {
+    if(confirm("Keluar?")) {
         if(client && client.connected) publishMessage("telah keluar.", 'system');
-        clearChatHistory();
         localStorage.removeItem('aksara_name');
         localStorage.removeItem('aksara_room');
         location.reload();
