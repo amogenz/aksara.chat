@@ -32,6 +32,7 @@ function enableNotif() {
         else alert("Ditolak browser.");
     });
 }
+
 function sendSystemNotification(user, text) {
     if (document.visibilityState === "hidden" && Notification.permission === "granted") {
         const notif = new Notification(`Aksara: ${user}`, { body: text, icon: "https://i.imgur.com/Ct0pzwl.png" });
@@ -59,6 +60,11 @@ function startChat() {
     document.getElementById('side-user').innerText = myName;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('chat-screen').style.display = 'flex';
+    
+    // --- INI BARIS YANG TADI HILANG, SEKARANG SUDAH ADA ---
+    document.getElementById('room-display').innerText = "#" + room;
+    // -----------------------------------------------------
+    
     document.getElementById('typing-indicator').innerText = "from Amogenz";
 
     loadChatHistory();
@@ -240,7 +246,10 @@ function displayMessage(data, saveToStorage = false) {
         div.innerHTML = `
             <span class="sender-name">${data.user}</span>
             ${replyHtml}
-            <div>${contentHtml}<span class="time-info">${data.time || time} ${replyBtn}</span></div>
+            <div>
+                ${contentHtml}
+                <span class="time-info">${data.time || time} ${replyBtn}</span>
+            </div>
         `;
     }
     chatBox.appendChild(div);
