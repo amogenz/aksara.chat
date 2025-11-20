@@ -1,47 +1,51 @@
-/* =========================================
-   AKSARA V19 FINAL STYLE
-   - Fast Performance
-   - Fixed Branding
-   - WA-Style Bubbles
-   ========================================= */
-
 /* --- GLOBAL & RESET --- */
-* { 
-    box-sizing: border-box; 
-    -webkit-tap-highlight-color: transparent; 
-}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 body { 
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    margin: 0; 
-    background-color: #0f0f0f; /* Hitam Elegan */
-    /* Pattern Halus */
+    margin: 0; background-color: #0f0f0f;
     background-image: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #000000 100%);
-    background-size: cover; 
-    background-position: center; 
-    background-attachment: fixed;
-    color: #E0E0E0; 
-    height: 100dvh; /* Fix tinggi layar HP */
-    overflow: hidden; 
+    background-size: cover; background-position: center; background-attachment: fixed;
+    color: #E0E0E0; height: 100dvh; overflow: hidden; 
+}
+div, button, input, textarea { transition: all 0.15s ease-out; }
+#file-input, #chat-file-input { display: none !important; }
+
+/* --- MODAL PREVIEW GAMBAR --- */
+#image-preview-modal {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #000; z-index: 2000; flex-direction: column;
+}
+.preview-content { display: flex; flex-direction: column; height: 100%; width: 100%; }
+.preview-header {
+    padding: 15px; display: flex; justify-content: space-between; align-items: center;
+    background: rgba(0,0,0,0.5); position: absolute; top: 0; width: 100%; z-index: 10;
+}
+.close-btn { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
+.preview-body {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    overflow: hidden; background: #111;
+}
+#preview-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.preview-footer {
+    padding: 10px 15px; background: #1e1e1e; display: flex; gap: 10px; align-items: center;
+    border-top: 1px solid #333;
+}
+#img-caption {
+    flex: 1; padding: 12px; border-radius: 20px; border: none; outline: none;
+    background: #333; color: #fff; font-size: 1rem;
+}
+#btn-send-img {
+    background: #FFD700; border: none; width: 45px; height: 45px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; color: #000;
 }
 
-/* Transisi halus tapi cepat */
-div, button, input, textarea { transition: all 0.15s ease-out; }
-
-#file-input { display: none !important; }
-
-/* --- LOGIN SCREEN --- */
+/* --- LOGIN --- */
 #login-screen { 
     display: flex; height: 100%; flex-direction: column; 
-    position: absolute; top: 0; left: 0; width: 100%; z-index: 999; 
-    background: #121212;
+    position: absolute; top: 0; left: 0; width: 100%; z-index: 999; background: #121212;
 }
-
-.login-content { 
-    flex: 1; display: flex; align-items: center; justify-content: center; 
-    width: 100%; padding: 20px; 
-}
-
+.login-content { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; padding: 20px; }
 .login-box { 
     background: #1e1e1e; padding: 30px; border-radius: 20px; 
     width: 100%; max-width: 320px; text-align: center; 
@@ -60,25 +64,16 @@ div, button, input, textarea { transition: all 0.15s ease-out; }
     font-weight: 800; margin-top: 15px; letter-spacing: 1px;
 }
 
-/* --- BRANDING FOOTER (FIXED & BESAR) --- */
+/* --- BRANDING --- */
 .branding-footer {
     position: absolute; bottom: 30px; left: 0; right: 0;
     display: flex; flex-direction: column; align-items: center; gap: 5px; 
     z-index: 1000; pointer-events: none;
 }
-.branding-text { 
-    color: #666; font-size: 0.85rem; text-transform: uppercase; 
-    letter-spacing: 1px; font-weight: 600; 
-}
-.branding-logo { 
-    width: 90px; /* Logo Besar */
-    height: auto; object-fit: contain; 
-    filter: grayscale(100%) brightness(200%); opacity: 0.9; 
-}
-
-/* Sembunyikan branding saat keyboard muncul (layar memendek) */
+.branding-text { color: #666; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+.branding-logo { width: 90px; height: auto; object-fit: contain; filter: grayscale(100%) brightness(200%); opacity: 0.9; }
 @media screen and (max-height: 500px) {
-    .branding-footer { display: none !important; visibility: hidden; }
+    .branding-footer { display: none !important; }
     .login-content { align-items: flex-start; padding-top: 20px; }
 }
 
@@ -102,32 +97,22 @@ div, button, input, textarea { transition: all 0.15s ease-out; }
 
 /* --- HEADER --- */
 header { 
-    background: #121212; padding: 0 15px; 
-    display: flex; align-items: center; justify-content: space-between;
+    background: #121212; padding: 0 15px; display: flex; align-items: center; justify-content: space-between;
     position: fixed; top: 0; left: 0; width: 100%; z-index: 50;
-    height: 65px; border-bottom: 1px solid #222; 
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    height: 65px; border-bottom: 1px solid #222; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
 }
 #chat-screen { display: none; flex-direction: column; height: 100%; width: 100%; }
 .header-left { display: flex; align-items: center; gap: 12px; width: 100%; }
 .header-logo { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #FFD700; }
 .header-text-container { display: flex; flex-direction: column; justify-content: center; }
-
-/* -- Title & Badge Room (YANG TADI HILANG) -- */
 .title-row { display: flex; align-items: center; gap: 8px; }
 .header-title-text { font-size: 17px; font-weight: 700; color: #E0E0E0; }
-.room-badge { 
-    background: rgba(255, 215, 0, 0.15); color: #FFD700; 
-    padding: 2px 8px; border-radius: 6px; 
-    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;
-    border: 1px solid rgba(255, 215, 0, 0.3);
-}
-
+.room-badge { background: rgba(255, 215, 0, 0.15); color: #FFD700; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px; border: 1px solid rgba(255, 215, 0, 0.3); }
 #typing-indicator { font-size: 0.75rem; color: #888; font-style: italic; margin-top: 1px; font-weight: 500; }
 .hamburger-icon { display: flex; flex-direction: column; gap: 5px; width: 26px; cursor: pointer; padding: 5px; }
 .hamburger-icon span { display: block; width: 100%; height: 2px; background: #FFD700; border-radius: 2px; }
 
-/* --- MESSAGES AREA (BUBBLE FIX) --- */
+/* --- MESSAGES --- */
 #messages { 
     flex: 1; overflow-y: auto; padding: 15px; 
     padding-top: 80px; padding-bottom: 90px; 
@@ -138,116 +123,47 @@ header {
     background: #1e1e1e; align-self: center; padding: 6px 16px; 
     border-radius: 20px; margin: 15px 0; 
 }
-
-/* BUBBLE CHAT UTAMA */
 .message { 
-    max-width: 75%; 
-    width: fit-content; /* Lebar Sesuai Teks */
-    min-width: 80px;
-    padding: 6px 10px; 
-    font-size: 0.95rem; 
-    position: relative; 
-    display: flex; flex-direction: column;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
-    margin-bottom: 2px;
-    line-height: 1.3;
+    max-width: 75%; width: fit-content; min-width: 80px;
+    padding: 6px 10px; font-size: 0.95rem; 
+    position: relative; display: flex; flex-direction: column;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3); margin-bottom: 2px; line-height: 1.3;
 }
-
-/* Pesan Orang Lain (Kiri) */
-.message.left { 
-    align-self: flex-start; 
-    background: #222; 
-    color: #fff; 
-    border-radius: 12px 12px 12px 0px; /* Lengkung Khas WA */
-    margin-left: 5px;
-}
-
-/* Pesan Saya (Kanan) */
-.message.right { 
-    align-self: flex-end; 
-    background: #FFD700; 
-    color: #000; 
-    border-radius: 12px 12px 0px 12px; /* Lengkung Khas WA */
-    margin-right: 5px;
-}
-
-/* Nama User */
-.sender-name { 
-    font-size: 0.75rem; font-weight: 700; 
-    margin-bottom: 2px; display: block; 
-}
+.message.left { align-self: flex-start; background: #222; color: #fff; border-radius: 12px 12px 12px 0px; margin-left: 5px; }
+.message.right { align-self: flex-end; background: #FFD700; color: #000; border-radius: 12px 12px 0px 12px; margin-right: 5px; }
+.sender-name { font-size: 0.75rem; font-weight: 700; margin-bottom: 2px; display: block; }
 .message.left .sender-name { color: #FFD700; }
 .message.right .sender-name { color: #444; font-size: 0.65rem; text-align: right; }
-
 .msg-content { word-wrap: break-word; white-space: pre-wrap; }
-
-/* Jam (Floating di pojok) */
+.msg-caption { font-size: 0.9rem; margin-top: 5px; }
 .time-info { 
-    float: right; 
-    font-size: 0.65rem; 
-    margin-top: 4px; margin-left: 10px; 
+    float: right; font-size: 0.65rem; margin-top: 4px; margin-left: 10px; 
     position: relative; top: 3px; opacity: 0.7;
 }
 .message.right .time-info { color: #000; font-weight: 600; }
 .message.left .time-info { color: #ccc; }
-
-/* Reply */
-.reply-quote {
-    background: rgba(0,0,0,0.15); border-left: 3px solid;
-    padding: 4px 8px; border-radius: 6px; 
-    font-size: 0.75rem; margin-bottom: 4px;
-}
+.reply-quote { background: rgba(0,0,0,0.15); border-left: 3px solid; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; margin-bottom: 4px; }
 .message.left .reply-quote { border-color: #FFD700; color: #ccc; }
 .message.right .reply-quote { border-color: #333; color: #333; }
-
 audio { height: 30px; max-width: 200px; margin-top: 4px; border-radius: 20px; filter: invert(1) hue-rotate(180deg) contrast(0.8); outline: none; }
 .message.right audio { filter: none; mix-blend-mode: multiply; opacity: 0.8; }
 .chat-image { width: 100%; border-radius: 8px; margin-top: 4px; max-width: 240px; object-fit: cover; }
 
-/* --- FOOTER INPUT --- */
-.footer-container {
-    position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
-    width: 96%; max-width: 600px; z-index: 50;
-    display: flex; flex-direction: column; gap: 6px;
-}
-
-#reply-preview-bar, #vn-preview-bar {
-    background: #222; padding: 10px 14px; border-radius: 16px;
-    display: none; align-items: center; justify-content: space-between;
-    border-left: 4px solid #FFD700; font-size: 0.85rem;
-}
-
-.input-area { 
-    background: #1e1e1e; padding: 6px 8px; border-radius: 26px;
-    display: flex; align-items: flex-end; gap: 6px; 
-    border: 1px solid #333; box-shadow: 0 5px 20px rgba(0,0,0,0.4);
-}
+/* --- FOOTER --- */
+.footer-container { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); width: 96%; max-width: 600px; z-index: 50; display: flex; flex-direction: column; gap: 6px; }
+#reply-preview-bar, #vn-preview-bar { background: #222; padding: 10px 14px; border-radius: 16px; display: none; align-items: center; justify-content: space-between; border-left: 4px solid #FFD700; font-size: 0.85rem; }
+.input-area { background: #1e1e1e; padding: 6px 8px; border-radius: 26px; display: flex; align-items: flex-end; gap: 6px; border: 1px solid #333; box-shadow: 0 5px 20px rgba(0,0,0,0.4); }
 .input-area:focus-within { border-color: #555; }
-
 .input-wrapper { flex: 1; display: flex; align-items: center; min-height: 40px; }
-#msg-input { 
-    width: 100%; padding: 10px 5px; border: none; background: transparent; 
-    color: #fff; outline: none; font-size: 1rem; 
-    resize: none; font-family: inherit; max-height: 120px; overflow-y: auto;
-}
-
+#msg-input { width: 100%; padding: 10px 5px; border: none; background: transparent; color: #fff; outline: none; font-size: 1rem; resize: none; font-family: inherit; max-height: 120px; overflow-y: auto; }
 .icon-btn { padding: 10px; color: #888; background: none; border: none; cursor: pointer; }
 .icon-btn:hover { color: #FFD700; }
 .icon-btn svg { width: 24px; height: 24px; fill: currentColor; }
-
-#send-btn {
-    background: #FFD700; border: none; width: 40px; height: 40px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center; cursor: pointer;
-    color: #000; margin-bottom: 1px; flex-shrink: 0;
-}
+#send-btn { background: #FFD700; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #000; margin-bottom: 1px; flex-shrink: 0; }
 #send-btn:active { transform: scale(0.9); }
 #send-btn svg { width: 20px; height: 20px; fill: currentColor; margin-left: 2px; }
-
-/* Extras */
 .recording { color: #ff4444 !important; animation: pulse 1s infinite; }
 .close-prev { padding: 5px; cursor: pointer; color: #888; font-weight: bold; }
-
-/* Toggle Switch */
 .switch { position: relative; display: inline-block; width: 36px; height: 20px; }
 .switch input { opacity: 0; width: 0; height: 0; }
 .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #444; transition: .4s; border-radius: 34px; }
