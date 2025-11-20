@@ -11,11 +11,29 @@
 
     <audio id="notifSound" src="https://cdn.freesound.org/previews/553/553347_11636504-lq.mp3" preload="auto"></audio>
 
+    <div id="image-preview-modal">
+        <div class="preview-content">
+            <div class="preview-header">
+                <span>Kirim Gambar</span>
+                <button class="close-btn" onclick="cancelImagePreview()">✕</button>
+            </div>
+            <div class="preview-body">
+                <img id="preview-img" src="" alt="Preview">
+            </div>
+            <div class="preview-footer">
+                <input type="text" id="img-caption" placeholder="Tambah keterangan..." autocomplete="off">
+                <button id="btn-send-img" onclick="sendImageWithCaption()">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
     
     <div id="sidebar">
         <div class="sidebar-header">
-            <h3>Aksara Settings</h3>
+            <h3>Aksara Menu</h3>
             <div style="color:#888; font-size:0.9rem; margin-top:5px;">User: <span id="side-user" style="color:#FFD700">...</span></div>
         </div>
         
@@ -57,14 +75,13 @@
     <div id="login-screen">
         <div class="login-content">
             <div class="login-box">
-                <h2>Aksara chat</h2>
+                <h2>AKSARA</h2>
                 <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 20px;">Saatnya menyambung rasa</p>
                 <input type="text" id="username" placeholder="Nama Panggilan" autocomplete="off">
                 <input type="text" id="room" placeholder="Kode Ruang" autocomplete="off">
                 <button class="btn-start" onclick="startChat()">MASUK</button>
             </div>
         </div>
-        
         <div class="branding-footer">
             <span class="branding-text">from</span>
             <img src="https://i.imgur.com/UMoiNw5.png" alt="Branding Logo" class="branding-logo">
@@ -88,6 +105,7 @@
                 </div>
             </div>
         </header>
+        
         <div id="messages"></div>
 
         <div class="footer-container">
@@ -108,7 +126,7 @@
             </div>
 
             <div class="input-area" id="main-input-area">
-                <button class="icon-btn" onclick="document.getElementById('file-input').click()">
+                <button class="icon-btn" onclick="triggerImageUpload()">
                     <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
                 </button>
 
@@ -127,9 +145,8 @@
         </div>
     </div>
 
-    <input type="file" id="file-input" accept="image/*" onchange="handleImageUpload(this)" style="display: none !important;">
+    <input type="file" id="chat-file-input" accept="image/*" onchange="handleImageUpload(this)" style="display: none !important;">
 
     <script src="script.js"></script>
 </body>
 </html>
-
