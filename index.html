@@ -11,6 +11,11 @@
 
     <audio id="notifSound" src="https://cdn.freesound.org/previews/553/553347_11636504-lq.mp3" preload="auto"></audio>
 
+    <div id="lightbox-overlay" onclick="closeLightbox(event)">
+        <span class="lightbox-close">&times;</span>
+        <img id="lightbox-img" src="" alt="Zoomed Image">
+    </div>
+
     <div id="image-preview-modal">
         <div class="preview-content">
             <div class="preview-header">
@@ -34,7 +39,7 @@
     <div id="sidebar">
         <div class="sidebar-header">
             <h3>Aksara Menu</h3>
-            <div style="color:#888; font-size:0.9rem; margin-top:5px;">User: <span id="side-user" style="color:#FFD700">...</span></div>
+            <div style="color:#888; font-size:0.9rem; margin-top:5px;">User: <span id="side-user" style="color:var(--theme-color)">...</span></div>
             
             <div class="stats-box">
                 <span class="stats-label">Total Kunjungan</span>
@@ -43,6 +48,15 @@
         </div>
         
         <div class="setting-group">
+            <div class="setting-block">
+                <label class="setting-label">Tema Aplikasi</label>
+                <div class="theme-selector">
+                    <button class="theme-btn" style="background:#FFD700" onclick="setTheme('default')" title="Gold"></button>
+                    <button class="theme-btn" style="background:#1DA1F2" onclick="setTheme('blue')" title="Twitter Blue"></button>
+                    <button class="theme-btn" style="background:#25D366" onclick="setTheme('green')" title="WA Green"></button>
+                </div>
+            </div>
+
             <div class="setting-block">
                 <label class="setting-label">Wallpaper</label>
                 <button class="permission-btn" onclick="document.getElementById('bg-input').click()">🖼️ Ganti Background</button>
@@ -116,7 +130,7 @@
         <div class="footer-container">
             <div id="reply-preview-bar">
                 <div style="flex:1; overflow:hidden;">
-                    <div style="color:#FFD700; font-size:0.7rem;">Membalas <b id="reply-to-user">...</b></div>
+                    <div style="color:var(--theme-color); font-size:0.7rem;">Membalas <b id="reply-to-user">...</b></div>
                     <div id="reply-preview-text">...</div>
                 </div>
                 <div class="close-prev" onclick="cancelReply()">✕</div>
@@ -155,5 +169,3 @@
     <script src="script.js"></script>
 </body>
 </html>
-
-
