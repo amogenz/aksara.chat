@@ -2,13 +2,18 @@ let client;
 let myName = "";
 let myRoom = "";
 let storageTopic = ""; 
+
+// --- COUNTER & STATS ---
+let statsTopic = "aksara-global-v1/visits"; 
+let hasCountedVisit = false; 
+
 let mediaRecorder, audioChunks = [], isRecording = false, audioBlobData = null;
 let isSoundOn = true;
 let sendOnEnter = true;
-let replyingTo = null;
+let replyingTo = null; // Format: { id, user, text }
 let onlineUsers = {};
 let typingTimeout;
-let localChatHistory = []; // Wadah utama chat
+let localChatHistory = []; 
 
 const notifAudio = document.getElementById('notifSound');
 
@@ -51,7 +56,7 @@ function startChat() {
     localStorage.setItem('aksara_name', user);
     localStorage.setItem('aksara_room', room);
     myName = user;
-    myRoom = "aksara-v29/" + room; // Versi channel baru biar bersih
+    myRoom = "aksara-v29/" + room; 
     storageTopic = myRoom + "/storage"; 
 
     document.getElementById('side-user').innerText = myName;
@@ -60,7 +65,6 @@ function startChat() {
     document.getElementById('room-display').innerText = "#" + room;
     document.getElementById('typing-indicator').innerText = "Menghubungkan...";
 
-    // 1. Muat dulu apa yang ada di HP (Biar gak kosong pas loading)
     loadFromLocal(); 
 
     const options = { 
@@ -73,12 +77,23 @@ function startChat() {
     client.on('connect', () => {
         document.getElementById('typing-indicator').innerText = "from Amogenz";
         
-        // Subscribe ke topik Room dan Storage
         client.subscribe(myRoom);
         client.subscribe(storageTopic);
+        client.subscribe(statsTopic);
         
         publishMessage("bergabung.", 'system');
         
+        // --- FIX LOADING COUNTER ---
+        // Jika dalam 3 detik tidak ada balasan dari topik stats, anggap topik kosong dan mulai dari 1
+        setTimeout(() => {
+            const counterEl = document.getElementById('visit-counter');
+            if (counterEl.innerText === "loading...") {
+                counterEl.innerText = "1";
+                hasCountedVisit = true;
+                client.publish(statsTopic, "1", { retain: true, qos: 1 });
+            }
+        }, 3000);
+
         setInterval(() => {
             client.publish(myRoom, JSON.stringify({ type: 'ping', user: myName }));
             cleanOnlineList();
@@ -88,125 +103,87 @@ function startChat() {
     client.on('message', (topic, message) => {
         const msgString = message.toString();
         
-        // A. DATA DARI SERVER (HISTORY)
+        // --- LOGIKA COUNTER ---
+        if (topic === statsTopic) {
+            let currentVisits = 0;
+            try { currentVisits = parseInt(msgString); } catch(e) {}
+            if (isNaN(currentVisits)) currentVisits = 0;
+
+            if (!hasCountedVisit) {
+                const newVisitCount = currentVisits + 1;
+                hasCountedVisit = true; 
+                client.publish(statsTopic, newVisitCount.toString(), { retain: true, qos: 1 });
+                document.getElementById('visit-counter').innerText = newVisitCount.toLocaleString();
+            } else {
+                document.getElementById('visit-counter').innerText = currentVisits.toLocaleString();
+            }
+            return; 
+        }
+
         if (topic === storageTopic) {
             try {
                 const serverHistory = JSON.parse(msgString);
-                if (Array.isArray(serverHistory)) {
-                    // GABUNGKAN data server dengan data lokal (Smart Merge)
-                    mergeWithLocal(serverHistory);
-                }
+                if (Array.isArray(serverHistory)) mergeWithLocal(serverHistory);
             } catch(e) {}
             return;
         }
 
-        // B. DATA REALTIME (CHAT BARU)
         if (topic === myRoom) {
             try {
                 const data = JSON.parse(msgString);
                 if (data.type === 'ping') { updateOnlineList(data.user); return; }
                 if (data.type === 'typing') { showTyping(data.user); return; }
-                
-                // Proses pesan baru
                 handleIncomingMessage(data);
             } catch (e) {}
         }
     });
 }
 
-// --- LOGIKA UTAMA PENYIMPANAN (THE BRAIN) ---
-
-// 1. Muat dari LocalStorage
+// --- LOGIKA PENYIMPANAN ---
 function loadFromLocal() {
     const saved = localStorage.getItem(getStorageKey());
-    if (saved) {
-        localChatHistory = JSON.parse(saved);
-        renderChat();
-    }
+    if (saved) { localChatHistory = JSON.parse(saved); renderChat(); }
 }
-
-// 2. Simpan ke LocalStorage
 function saveToLocal() {
     localStorage.setItem(getStorageKey(), JSON.stringify(localChatHistory));
 }
-
-// 3. Handle Pesan Masuk Realtime
 function handleIncomingMessage(data) {
     if(data.type !== 'system') {
-        // Cek duplikat berdasarkan timestamp & user
-        const exists = localChatHistory.some(msg => msg.timestamp === data.timestamp && msg.user === data.user);
-        
+        // Cek duplikat via Message ID (lebih akurat) atau Timestamp+User
+        const exists = localChatHistory.some(msg => msg.id === data.id);
         if (!exists) {
             localChatHistory.push(data);
-            
-            // Limit 77 Pesan
-            if (localChatHistory.length > 77) {
-                localChatHistory = localChatHistory.slice(-77); // Ambil 77 terakhir
-            }
-            
-            saveToLocal(); // Simpan di HP
-            renderChat();  // Tampilkan
-            
-            // Jika saya pengirimnya, update "Cloud Storage" agar teman lain bisa ambil
-            if (data.user === myName) {
-                updateServerStorage();
-            }
+            if (localChatHistory.length > 77) localChatHistory = localChatHistory.slice(-77); 
+            saveToLocal(); renderChat(); 
+            if (data.user === myName) updateServerStorage();
         }
-    } else {
-        // Pesan system (bergabung) tidak perlu disimpan permanen
-        displaySingleMessage(data); 
-    }
+    } else { displaySingleMessage(data); }
 }
-
-// 4. Gabungkan Data Server + Lokal (Smart Merge)
 function mergeWithLocal(serverData) {
     let isChanged = false;
-    
     serverData.forEach(srvMsg => {
-        // Cek apakah pesan server ini sudah ada di HP kita?
-        const exists = localChatHistory.some(locMsg => locMsg.timestamp === srvMsg.timestamp && locMsg.user === srvMsg.user);
-        
-        if (!exists) {
-            localChatHistory.push(srvMsg);
-            isChanged = true;
-        }
+        const exists = localChatHistory.some(locMsg => locMsg.id === srvMsg.id);
+        if (!exists) { localChatHistory.push(srvMsg); isChanged = true; }
     });
-
     if (isChanged) {
-        // Urutkan berdasarkan waktu (biar chat lama gak loncat ke bawah)
         localChatHistory.sort((a, b) => a.timestamp - b.timestamp);
-        
-        // Potong lagi jadi 77
-        if (localChatHistory.length > 77) {
-            localChatHistory = localChatHistory.slice(-77);
-        }
-
-        saveToLocal();
-        renderChat();
+        if (localChatHistory.length > 77) localChatHistory = localChatHistory.slice(-77);
+        saveToLocal(); renderChat();
     }
 }
-
-// 5. Update Server (Retain)
 function updateServerStorage() {
-    // Kirim history lokal kita ke topik storage (Retained = True)
     client.publish(storageTopic, JSON.stringify(localChatHistory), { retain: true, qos: 1 });
 }
-
-// 6. Render Ulang Semua Chat
 function renderChat() {
     const chatBox = document.getElementById('messages');
     chatBox.innerHTML = '<div class="welcome-msg">Riwayat chat dimuat (Maks 77).</div>';
     localChatHistory.forEach(msg => displaySingleMessage(msg));
-    
-    // Scroll ke bawah
     setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 50);
 }
 
-
-// --- HELPER FUNCTIONS ---
+// --- HELPER ---
 function getStorageKey() { return 'aksara_history_v29_' + myRoom; }
-
-function handleBackgroundUpload(input) {
+function handleBackgroundUpload(input) { /* Sama seperti sebelumnya */
     const file = input.files[0];
     if(file) {
         const reader = new FileReader();
@@ -239,7 +216,11 @@ function publishMessage(content, type = 'text', caption = '') {
     const now = new Date();
     const time = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
     
+    // Generate Unique ID
+    const msgId = 'msg-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+
     const payload = { 
+        id: msgId, // ID unik untuk scroll
         user: myName, content: content, type: type, 
         caption: caption, time: time, reply: replyingTo, timestamp: Date.now() 
     };
@@ -252,9 +233,34 @@ function sendMessage() {
     if (text) { publishMessage(text, 'text'); input.value = ''; input.style.height = 'auto'; input.focus(); }
 }
 function handleEnter(e) { if (e.key === 'Enter' && !e.shiftKey && sendOnEnter) { e.preventDefault(); sendMessage(); } }
-function setReply(user, text) { replyingTo = { user: user, text: text }; document.getElementById('reply-preview-bar').style.display = 'flex'; document.getElementById('reply-to-user').innerText = user; document.getElementById('reply-preview-text').innerText = text; document.getElementById('msg-input').focus(); }
+
+// --- UPDATE REPLY LOGIC ---
+function setReply(id, user, text) { 
+    replyingTo = { id: id, user: user, text: text }; 
+    document.getElementById('reply-preview-bar').style.display = 'flex'; 
+    document.getElementById('reply-to-user').innerText = user; 
+    
+    // Potong teks preview jika kepanjangan
+    let preview = text;
+    if(preview.length > 50) preview = preview.substring(0, 50) + "...";
+    document.getElementById('reply-preview-text').innerText = preview; 
+    
+    document.getElementById('msg-input').focus(); 
+}
 function cancelReply() { replyingTo = null; document.getElementById('reply-preview-bar').style.display = 'none'; }
 
+function scrollToMessage(msgId) {
+    const el = document.getElementById(msgId);
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('flash-highlight');
+        setTimeout(() => el.classList.remove('flash-highlight'), 1000);
+    } else {
+        alert("Pesan asli sudah tidak ada (terhapus/terlalu lama).");
+    }
+}
+
+// --- MEDIA LOGIC (RECORDING & IMAGE) ---
 async function toggleRecording() {
     const micBtn = document.getElementById('mic-btn');
     if (!isRecording) {
@@ -315,14 +321,15 @@ function showTyping(user) {
     typingTimeout = setTimeout(() => { ind.innerText = "from Amogenz"; ind.style.color = "#888"; }, 2000);
 }
 
-// --- UI DISPLAY SINGLE MESSAGE ---
+// --- DISPLAY LOGIC ---
 function displaySingleMessage(data) {
     const chatBox = document.getElementById('messages');
     const div = document.createElement('div');
     const isMe = data.user === myName;
+    
+    // Assign Unique ID to element
+    if (data.id) div.id = data.id;
 
-    // Notifikasi & Suara (Hanya utk chat baru realtime, bukan saat load history)
-    // Kita cek selisih waktu pesan dengan waktu sekarang, kalau < 2 detik berarti baru
     const isNew = (Date.now() - data.timestamp) < 3000; 
     if (isNew && !isMe && data.type !== 'system') {
         if (isSoundOn) { notifAudio.currentTime = 0; notifAudio.play().catch(() => {}); }
@@ -336,26 +343,46 @@ function displaySingleMessage(data) {
     } else {
         div.className = isMe ? 'message right' : 'message left';
         let contentHtml = "";
-        let plainText = "Media";
         
+        // Tentukan teks preview untuk fungsi Reply
+        let replyPreviewText = "Media";
         if (data.type === 'text') { 
             contentHtml = `<span class="msg-content">${data.content}</span>`; 
+            replyPreviewText = data.content;
         }
         else if (data.type === 'image') {
             contentHtml = `<img src="${data.content}" class="chat-image">`;
-            if(data.caption && data.caption !== "") {
-                contentHtml += `<div class="msg-caption">${data.caption}</div>`;
-            }
+            if(data.caption) contentHtml += `<div class="msg-caption">${data.caption}</div>`;
+            replyPreviewText = "📷 Gambar";
         }
         else if (data.type === 'audio') { 
             contentHtml = `<audio controls src="${data.content}"></audio>`; 
+            replyPreviewText = "🎤 Audio";
         }
 
+        // Render Blok Balasan (Reply Quote)
         let replyHtml = "";
         if(data.reply) {
-            replyHtml = `<div class="reply-quote"><b>${data.reply.user}</b><br>${data.reply.text}</div>`;
+            // Potong teks jika kepanjangan di bubble
+            let shortText = data.reply.text;
+            if(shortText.length > 40) shortText = shortText.substring(0, 40) + "...";
+            
+            replyHtml = `
+                <div class="reply-quote" onclick="scrollToMessage('${data.reply.id}')">
+                    <div class="reply-bar"></div>
+                    <div class="reply-content">
+                        <b>${data.reply.user}</b>
+                        <span>${shortText}</span>
+                    </div>
+                </div>`;
         }
-        const replyBtn = !isMe ? `<span onclick="setReply('${data.user}', 'Reply')" style="cursor:pointer; margin-left:5px;">↩</span>` : '';
+        
+        // Tombol Reply (Hanya untuk orang lain)
+        // Kita escape petik agar tidak error
+        const safeText = replyPreviewText.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        // Gunakan ID pesan ini agar reply bisa melompat kembali
+        const msgId = data.id || 'unknown';
+        const replyBtn = !isMe ? `<span onclick="setReply('${msgId}', '${data.user}', '${safeText}')" class="reply-btn">↩</span>` : '';
 
         div.innerHTML = `
             <span class="sender-name">${data.user}</span>
