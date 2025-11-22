@@ -26,7 +26,28 @@ window.onload = function() {
     if(localStorage.getItem('aksara_enter')) document.getElementById('enter-toggle').checked = (localStorage.getItem('aksara_enter') === 'true');
     const savedBg = localStorage.getItem('aksara_bg_image');
     if(savedBg) document.body.style.backgroundImage = `url(${savedBg})`;
+
+    // LOAD THEME
+    const savedTheme = localStorage.getItem('aksara_theme') || 'default';
+    setTheme(savedTheme);
 };
+
+// --- TEMA & UI SYSTEM ---
+function setTheme(themeName) {
+    document.documentElement.setAttribute('data-theme', themeName);
+    localStorage.setItem('aksara_theme', themeName);
+    
+    const ind = document.getElementById('typing-indicator');
+    if(ind && ind.innerText.includes('mengetik')) {
+        ind.classList.add('typing');
+    }
+    
+    const btns = document.querySelectorAll('.theme-btn');
+    btns.forEach(btn => {
+        if(btn.getAttribute('onclick').includes(themeName)) btn.classList.add('active');
+        else btn.classList.remove('active');
+    });
+}
 
 // --- NOTIFIKASI SYSTEM ---
 function enableNotif() {
@@ -83,8 +104,6 @@ function startChat() {
         
         publishMessage("bergabung.", 'system');
         
-        // --- FIX LOADING COUNTER ---
-        // Jika dalam 3 detik tidak ada balasan dari topik stats, anggap topik kosong dan mulai dari 1
         setTimeout(() => {
             const counterEl = document.getElementById('visit-counter');
             if (counterEl.innerText === "loading...") {
@@ -103,7 +122,6 @@ function startChat() {
     client.on('message', (topic, message) => {
         const msgString = message.toString();
         
-        // --- LOGIKA COUNTER ---
         if (topic === statsTopic) {
             let currentVisits = 0;
             try { currentVisits = parseInt(msgString); } catch(e) {}
@@ -149,7 +167,6 @@ function saveToLocal() {
 }
 function handleIncomingMessage(data) {
     if(data.type !== 'system') {
-        // Cek duplikat via Message ID (lebih akurat) atau Timestamp+User
         const exists = localChatHistory.some(msg => msg.id === data.id);
         if (!exists) {
             localChatHistory.push(data);
@@ -183,7 +200,7 @@ function renderChat() {
 
 // --- HELPER ---
 function getStorageKey() { return 'aksara_history_v29_' + myRoom; }
-function handleBackgroundUpload(input) { /* Sama seperti sebelumnya */
+function handleBackgroundUpload(input) { 
     const file = input.files[0];
     if(file) {
         const reader = new FileReader();
@@ -216,11 +233,10 @@ function publishMessage(content, type = 'text', caption = '') {
     const now = new Date();
     const time = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
     
-    // Generate Unique ID
     const msgId = 'msg-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
 
     const payload = { 
-        id: msgId, // ID unik untuk scroll
+        id: msgId, 
         user: myName, content: content, type: type, 
         caption: caption, time: time, reply: replyingTo, timestamp: Date.now() 
     };
@@ -240,7 +256,6 @@ function setReply(id, user, text) {
     document.getElementById('reply-preview-bar').style.display = 'flex'; 
     document.getElementById('reply-to-user').innerText = user; 
     
-    // Potong teks preview jika kepanjangan
     let preview = text;
     if(preview.length > 50) preview = preview.substring(0, 50) + "...";
     document.getElementById('reply-preview-text').innerText = preview; 
@@ -312,13 +327,21 @@ function sendImageWithCaption() {
         cancelImagePreview();
     }
 }
-function handleTyping() { if(client && client.connected) client.publish(myRoom, JSON.stringify({ type: 'typing', user: myName })); const el = document.getElementById('msg-input'); el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+function handleTyping() { 
+    if(client && client.connected) client.publish(myRoom, JSON.stringify({ type: 'typing', user: myName })); 
+    const el = document.getElementById('msg-input'); 
+    el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; 
+}
 function showTyping(user) {
     if (user === myName) return;
     const ind = document.getElementById('typing-indicator');
-    ind.innerText = `${user} mengetik...`; ind.style.color = "#FFD700";
+    ind.innerText = `${user} mengetik...`; 
+    ind.classList.add('typing'); // Tambah class warna
     clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => { ind.innerText = "from Amogenz"; ind.style.color = "#888"; }, 2000);
+    typingTimeout = setTimeout(() => { 
+        ind.innerText = "from Amogenz"; 
+        ind.classList.remove('typing'); // Hapus class warna
+    }, 2000);
 }
 
 // --- DISPLAY LOGIC ---
@@ -327,7 +350,6 @@ function displaySingleMessage(data) {
     const div = document.createElement('div');
     const isMe = data.user === myName;
     
-    // Assign Unique ID to element
     if (data.id) div.id = data.id;
 
     const isNew = (Date.now() - data.timestamp) < 3000; 
@@ -344,14 +366,14 @@ function displaySingleMessage(data) {
         div.className = isMe ? 'message right' : 'message left';
         let contentHtml = "";
         
-        // Tentukan teks preview untuk fungsi Reply
         let replyPreviewText = "Media";
         if (data.type === 'text') { 
             contentHtml = `<span class="msg-content">${data.content}</span>`; 
             replyPreviewText = data.content;
         }
         else if (data.type === 'image') {
-            contentHtml = `<img src="${data.content}" class="chat-image">`;
+            // MODIFIED FOR LIGHTBOX
+            contentHtml = `<img src="${data.content}" class="chat-image" onclick="openLightbox(this.src)" style="cursor:pointer;">`;
             if(data.caption) contentHtml += `<div class="msg-caption">${data.caption}</div>`;
             replyPreviewText = "📷 Gambar";
         }
@@ -360,10 +382,8 @@ function displaySingleMessage(data) {
             replyPreviewText = "🎤 Audio";
         }
 
-        // Render Blok Balasan (Reply Quote)
         let replyHtml = "";
         if(data.reply) {
-            // Potong teks jika kepanjangan di bubble
             let shortText = data.reply.text;
             if(shortText.length > 40) shortText = shortText.substring(0, 40) + "...";
             
@@ -377,10 +397,7 @@ function displaySingleMessage(data) {
                 </div>`;
         }
         
-        // Tombol Reply (Hanya untuk orang lain)
-        // Kita escape petik agar tidak error
         const safeText = replyPreviewText.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        // Gunakan ID pesan ini agar reply bisa melompat kembali
         const msgId = data.id || 'unknown';
         const replyBtn = !isMe ? `<span onclick="setReply('${msgId}', '${data.user}', '${safeText}')" class="reply-btn">↩</span>` : '';
 
@@ -401,4 +418,19 @@ function leaveRoom() {
         localStorage.removeItem('aksara_room');
         location.reload();
     }
+}
+
+// --- LIGHTBOX FUNCTIONS (BARU) ---
+function openLightbox(src) {
+    const lb = document.getElementById('lightbox-overlay');
+    const img = document.getElementById('lightbox-img');
+    img.src = src; 
+    lb.style.display = 'flex'; 
+}
+
+function closeLightbox(e) {
+    if (e && e.target.id !== 'lightbox-overlay' && !e.target.classList.contains('lightbox-close')) return;
+    
+    document.getElementById('lightbox-overlay').style.display = 'none';
+    document.getElementById('lightbox-img').src = ""; 
 }
